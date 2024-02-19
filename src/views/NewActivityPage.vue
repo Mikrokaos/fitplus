@@ -37,6 +37,7 @@ import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { add, trashOutline } from "ionicons/icons";
 import { IActivityType } from "@/types/ActivityType";
+import defaultActivity from "../defaultActivity.jpg";
 
 const router = useRouter();
 
@@ -79,7 +80,7 @@ const removeImagePreview = () => {
 //Handle data POSTing
 const postNewActivity = async () => {
 	if (!newActivity.value.imageUrl) {
-		alert("Please upload an image");
+		newActivity.value.imageUrl = defaultActivity;
 		return;
 	}
 
@@ -141,11 +142,15 @@ onMounted(async () => {
 
 // Form validation
 const formIsValid = computed(() => {
-	return (
+	console.log("Type:", newActivity.value.type);
+	console.log("Duration:", newActivity.value.duration);
+	console.log("Calorie Consumption:", newActivity.value.calorieConsumption);
+	const isValid =
 		newActivity.value.type !== "" &&
 		newActivity.value.duration > 0 &&
-		newActivity.value.calorieConsumption > 0
-	);
+		newActivity.value.calorieConsumption > 0;
+	console.log("Form is valid:", isValid);
+	return isValid;
 });
 </script>
 
@@ -213,7 +218,7 @@ const formIsValid = computed(() => {
 				<ion-button
 					@click="postNewActivity"
 					expand="block"
-					:disabled="!formIsValid"
+					:disabled="!formIsValid.valueOf"
 					>Submit Activity</ion-button
 				>
 			</ion-list>

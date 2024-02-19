@@ -35,7 +35,9 @@ export default defineComponent({
 		<ion-card-content>
 			<div>Duration: {{ activity.duration }} minutes</div>
 			<div>Calories: {{ activity.calorieConsumption }}</div>
-			<ion-img :src="activity.imageUrl" v-if="activity.imageUrl"></ion-img>
+			<ion-img
+				:src="activity.imageUrl"
+				v-if="activity.imageUrl || /img/defaultActivity"></ion-img>
 		</ion-card-content>
 	</ion-card>
 </template>
