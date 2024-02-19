@@ -37,7 +37,6 @@ import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { add, trashOutline } from "ionicons/icons";
 import { IActivityType } from "@/types/ActivityType";
-import defaultActivity from "../defaultActivity.jpg";
 
 const router = useRouter();
 
@@ -79,30 +78,32 @@ const removeImagePreview = () => {
 
 //Handle data POSTing
 const postNewActivity = async () => {
-	if (!newActivity.value.imageUrl) {
-		newActivity.value.imageUrl = defaultActivity;
-		return;
-	}
-
 	try {
 		// Generating a Unique ID for the new activity
 		const generateUUID = uuidv4();
-		// Creating a Unique Image Name
 		const imageName = `activities/${generateUUID}-${new Date().getTime()}.jpg`;
-		// Creating storage reference
-		const storage = getStorage();
-		const imageRef = storageRef(storage, imageName);
-		// Fetching the image as blob
-		const response = await fetch(newActivity.value.imageUrl);
-		const blob = await response.blob();
-		// Uploading the image to the storage
-		const snapshot = await uploadBytes(imageRef, blob);
-		// Getting the download URL
-		const downloadURL = await getDownloadURL(snapshot.ref);
-		// Updating the Activity object
-		newActivity.value.imageUrl = downloadURL;
-		newActivity.value.id = generateUUID;
-		// Adding the new activity to the database
+		let imageUrl = ""; // Initialize imageUrl variable
+
+		if (newActivity.value.imageUrl) {
+			// If user has uploaded an image, upload it to Firebase Storage
+			const storage = getStorage();
+			const imageRef = storageRef(storage, imageName);
+			const response = await fetch(newActivity.value.imageUrl);
+			const blob = await response.blob();
+			const snapshot = await uploadBytes(imageRef, blob);
+			imageUrl = await getDownloadURL(snapshot.ref);
+		} else {
+			// Use the default image URL if the user hvaent uploaded an image
+			imageUrl = "gs://fitplustds200.appspot.com/images/defaultActivity.jpg";
+		}
+
+		// Preparing the activity object with the imageUrl
+		const activityData = {
+			...newActivity.value,
+			imageUrl: imageUrl,
+			id: generateUUID,
+		};
+
 		await setDoc(doc(activityCollection, generateUUID), newActivity.value);
 
 		const successToast = await toastController.create({

@@ -31,7 +31,6 @@ import {
 	getDownloadURL,
 	ref as dbRef,
 } from "firebase/storage";
-import { getIdToken } from "firebase/auth";
 import { v4 as uuidv4 } from "uuid";
 
 const router = useRouter();
@@ -88,19 +87,26 @@ const register = async () => {
 			toast.present();
 			return;
 		}
-		await authService.register(
+		// Capture the returned user object from the authService.register call
+		const user = await authService.register(
 			userDetails.value.email,
 			userDetails.value.password
 		);
-		await postProfilePicture();
-		const { password, ...profileWithoutPassword } = userDetails.value;
+
+		// Post the profile picture and get its URL
+		const profilePictureUrl = await postProfilePicture();
+
+		const { password, ...userProfileData } = userDetails.value;
 		const userProfile = {
-			...profileWithoutPassword,
+			...userProfileData,
+			id: user.uid,
+			profilePicture: profilePictureUrl,
 		};
-		await setDoc(
-			doc(userProfilesCollection, userDetails.value.id),
-			userProfile
-		);
+
+		// Create the user profile document in Firestore
+		await setDoc(doc(db, "userProfiles", user.uid), userProfile);
+
+		// Optionally, log the user in immediately after registration
 		await login();
 	} catch (error) {
 		console.error(error);
@@ -120,10 +126,11 @@ const logout = async () => {
 const triggerCamera = async () => {
 	const image = await Camera.getPhoto({
 		quality: 100,
-		allowEditing: true,
-		resultType: CameraResultType.DataUrl,
+		allowEditing: false,
+		resultType: CameraResultType.Uri,
 	});
 	if (image.webPath) {
+		console.log(image.webPath);
 		userDetails.value.profilePicture = image.webPath;
 	}
 };
@@ -134,7 +141,7 @@ const removeImagePreview = () => {
 
 const postProfilePicture = async () => {
 	if (userDetails.value.profilePicture === "") {
-		userDetails.value.profilePicture = "img/defaultProfilePicture.png";
+		alert("You have to upload a profile picture first!");
 		return;
 	}
 	try {
@@ -171,6 +178,9 @@ const postProfilePicture = async () => {
 </script>
 <template>
 	<IonPage>
+		<ion-list-header>
+			<ion-title :router-link="'/home'">FitPlus</ion-title>
+		</ion-list-header>
 		<IonContent class="ion-padding">
 			<IonList>
 				<IonListHeader>
@@ -192,14 +202,27 @@ const postProfilePicture = async () => {
 					<IonLabel position="floating">Username</IonLabel>
 					<IonInput v-model="userDetails.userName" type="text"></IonInput>
 				</IonItem>
-				<IonItem v-if="inRegisterMode">
-					<IonLabel position="floating">Profile Picture</IonLabel>
-					<IonInput v-model="userDetails.profilePicture" type="text"></IonInput>
-					<IonButton @click="triggerCamera">Take Picture</IonButton>
-					<IonButton @click="removeImagePreview">
-						<IonIcon :icon="trashOutline"></IonIcon>
+				<IonItem v-if="inRegisterMode && !userDetails.profilePicture">
+					<IonButton @click="triggerCamera" class="image-picker" color="light">
+						Choose or take Profile Picture
 					</IonButton>
 				</IonItem>
+
+				<!-- Image Preview Section shown only if a profile picture has been selected -->
+				<section v-if="inRegisterMode && userDetails.profilePicture">
+					<img
+						:src="userDetails.profilePicture"
+						alt="Profile picture preview" />
+					<IonButton
+						@click="removeImagePreview"
+						fill="default"
+						class="remove-image-preview">
+						<IonIcon
+							slot="icon-only"
+							:icon="trashOutline"
+							color="danger"></IonIcon>
+					</IonButton>
+				</section>
 				<IonButton @click="inRegisterMode ? register() : login()">
 					{{ inRegisterMode ? "Register" : "Login" }}
 				</IonButton>
@@ -214,3 +237,26 @@ const postProfilePicture = async () => {
 		</IonContent>
 	</IonPage>
 </template>
+<style scoped>
+ion-list {
+	display: flex;
+	flex-direction: column;
+}
+
+.label-mild {
+	--color: #8a8a8a !important;
+}
+
+.button-auth {
+	margin-top: 50px;
+	margin-left: 10px;
+	margin-right: 10px;
+}
+.image-picker {
+	height: 20vh;
+	margin: 10px;
+	border: 2px #8a8a8a dashed;
+	border-radius: 8px;
+	font-size: medium;
+}
+</style>
