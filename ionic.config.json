@@ -1,0 +1,7 @@
+{
+  "name": "fitplus",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite"
+}
