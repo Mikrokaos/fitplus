@@ -15,6 +15,11 @@ import { useRouter } from "vue-router";
 import AuthenticationPage from "./AuthenticationPage.vue";
 
 const router = useRouter();
+
+const continueAsGuest = () => {
+	localStorage.setItem("isGuest", "true");
+	router.push("/activity");
+};
 </script>
 
 <template>
@@ -33,7 +38,7 @@ const router = useRouter();
 							<IonButton :router-link="'/authentication'" color="black"
 								>Login</IonButton
 							>
-							<IonButton :router-link="'/activity'" color="black"
+							<IonButton @click="continueAsGuest" color="black"
 								>Continue as Guest</IonButton
 							>
 						</div>

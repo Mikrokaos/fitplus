@@ -59,6 +59,7 @@ const login = async () => {
 		);
 		const idToken = await user.getIdToken(true);
 		localStorage.setItem("idToken", idToken);
+		localStorage.removeItem("isGuest"); // Remove the guest flag if it exists
 		router.replace("/home");
 	} catch (error) {
 		const toast = await toastController.create({

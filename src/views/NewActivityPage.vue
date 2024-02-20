@@ -23,6 +23,7 @@ import {
 	getFirestore,
 	doc,
 	setDoc,
+	getDoc,
 	getDocs,
 	collection,
 } from "firebase/firestore";
@@ -37,15 +38,19 @@ import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { add, camera, cameraOutline, trashOutline } from "ionicons/icons";
 import { IActivityType } from "@/types/ActivityType";
+import { getAuth, updateCurrentUser } from "firebase/auth";
+import { authService } from "@/services/firebase.AuthService";
+import { IUserProfile } from "../types/UserProfile";
 
 interface SelectCustomEvent<T> {
 	detail: { value: T };
 	target: HTMLIonSelectElement;
 }
 
+const userProfile = ref<IUserProfile | null>(null);
 const router = useRouter();
-
 const db = getFirestore();
+const auth = getAuth();
 
 // Keeps track of all data input from the user towards adding a new activity
 const newActivity = ref({
@@ -61,12 +66,33 @@ const newActivity = ref({
 
 const activityTypes: Ref<IActivityType[]> = ref([]);
 
+const isGuest = computed(() => {
+	return localStorage.getItem("isGuest") === "true";
+});
+
 const activityCollection = collection(getFirestore(), "activities");
 
 const handleTypeChange = (event: SelectCustomEvent<string>) => {
 	newActivity.value.type = event.detail.value;
 	console.log("Selected type:", newActivity.value.type);
 };
+
+// Fetch the user's name from the user profile
+const fetchUserProfile = async (userId: string) => {
+	const userRef = doc(db, "userProfile", userId);
+	const userSnapshot = await getDoc(userRef);
+	if (userSnapshot.exists()) {
+		const userProfile = userSnapshot.data() as IUserProfile;
+	} else {
+		console.error("User profile not found");
+	}
+};
+
+onMounted(async () => {
+	if (auth.currentUser) {
+		await fetchUserProfile(auth.currentUser.uid);
+	}
+});
 
 // Open the device camera or file picker
 const triggerCamera = async () => {
@@ -88,13 +114,18 @@ const removeImagePreview = () => {
 
 //Handle data POSTing
 const postNewActivity = async () => {
+	if (isGuest.value && newActivity.value.imageUrl) {
+		alert("Guest user cannot upload images. Please register or log in");
+		return;
+	}
+
 	try {
 		// Generating a Unique ID for the new activity
 		const generateUUID = uuidv4();
 		const imageName = `activities/${generateUUID}-${new Date().getTime()}.jpg`;
 		let imageUrl = ""; // Initialize imageUrl variable
 
-		if (newActivity.value.imageUrl) {
+		if (!isGuest && newActivity.value.imageUrl) {
 			// If user has uploaded an image, upload it to Firebase Storage
 			const storage = getStorage();
 			const imageRef = storageRef(storage, imageName);
@@ -113,7 +144,7 @@ const postNewActivity = async () => {
 			duration: Number(newActivity.value.duration),
 			calorieConsumption: Number(newActivity.value.calorieConsumption),
 			timestamp: Date.now(),
-			userName: "", // TODO - Replace with the userName from the user's profile
+			userName: isGuest.value ? "Guest" : "",
 			notes: newActivity.value.notes,
 			imageUrl: imageUrl,
 		};
@@ -216,7 +247,7 @@ const formIsValid = computed(() => {
 				<ion-item>
 					<ion-button
 						@click="triggerCamera"
-						:icon="camera"
+						:icon="cameraOutline"
 						fill="outline"></ion-button>
 					<ion-button
 						@click="removeImagePreview"

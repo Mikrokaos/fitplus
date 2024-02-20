@@ -31,10 +31,6 @@ const currentUser = () => {
 	return authService.currentUser();
 };
 
-const login = () => {
-	router.push("/authentication");
-};
-
 const logout = async () => {
 	try {
 		await authService.logout();
@@ -56,15 +52,15 @@ const refreshActivities = async (event: CustomEvent) => {
 	}
 };
 
+// Fetching activities from Firestore
 const fetchActivities = async () => {
 	const results = [];
 	const activitiesSnapshot = await getDocs(collection(db, "activities"));
 	activitiesSnapshot.forEach((doc) => {
-		// Avoid pushing the id field inside the document data
 		const activityData = doc.data();
 		results.push({
 			...activityData,
-			id: doc.id, // id is used here as a unique key for rendering purposes
+			id: doc.id,
 		});
 	});
 	activities.value = results;
@@ -100,6 +96,6 @@ const fetchActivities = async () => {
 
 <style scoped>
 .custom-background {
-	--background: linear-gradient(135deg, #542663 20%, #59f16d 100%);
+	--background: linear-gradient(135deg, #542663 20%, #327a3b 100%);
 }
 </style>

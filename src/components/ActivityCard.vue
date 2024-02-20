@@ -5,7 +5,7 @@ import {
 	IonCardTitle,
 	IonCardContent,
 } from "@ionic/vue";
-import ActivityImage from "./ActivityImage.vue"; // Adjust the import path to where your ImageCard is located
+import ActivityImage from "./ActivityImage.vue";
 import { defineComponent, PropType } from "vue";
 import { IActivity } from "../models/ActivityModels";
 
@@ -16,7 +16,7 @@ export default defineComponent({
 		IonCardHeader,
 		IonCardTitle,
 		IonCardContent,
-		ActivityImage, // Register the ImageCard component
+		ActivityImage,
 	},
 	props: {
 		activity: {
@@ -50,13 +50,13 @@ export default defineComponent({
 
 <style scoped>
 .activity-card {
-	max-width: 600px; /* Set the maximum width of the card */
-	margin: auto; /* Center the card */
-	margin-bottom: 16px; /* Add some margin at the bottom of the card */
+	max-width: 600px;
+	margin: auto;
+	margin-bottom: 16px;
 	margin-top: 10px;
 }
 
 .activity-details {
-	padding: 16px; /* Add some padding inside the card for the text */
+	padding: 16px;
 }
 </style>
