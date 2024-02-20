@@ -9,6 +9,7 @@ import {
 	IonList,
 	IonListHeader,
 	IonPage,
+	IonTitle,
 	IonToggle,
 	toastController,
 } from "@ionic/vue";
@@ -178,85 +179,104 @@ const postProfilePicture = async () => {
 </script>
 <template>
 	<IonPage>
-		<ion-list-header>
-			<ion-title :router-link="'/home'">FitPlus</ion-title>
-		</ion-list-header>
-		<IonContent class="ion-padding">
-			<IonList>
-				<IonListHeader>
-					<h1>{{ inRegisterMode ? "Register" : "Login" }}</h1>
-				</IonListHeader>
-				<IonItem>
-					<IonLabel position="floating">Email</IonLabel>
-					<IonInput v-model="userDetails.email" type="email"></IonInput>
-				</IonItem>
-				<IonItem>
-					<IonLabel position="floating">Password</IonLabel>
-					<IonInput v-model="userDetails.password" type="password"></IonInput>
-				</IonItem>
-				<IonItem v-if="inRegisterMode">
-					<IonLabel position="floating">Name</IonLabel>
-					<IonInput v-model="userDetails.name" type="text"></IonInput>
-				</IonItem>
-				<IonItem v-if="inRegisterMode">
-					<IonLabel position="floating">Username</IonLabel>
-					<IonInput v-model="userDetails.userName" type="text"></IonInput>
-				</IonItem>
-				<IonItem v-if="inRegisterMode && !userDetails.profilePicture">
-					<IonButton @click="triggerCamera" class="image-picker" color="light">
-						Choose or take Profile Picture
-					</IonButton>
-				</IonItem>
-
-				<!-- Image Preview Section shown only if a profile picture has been selected -->
-				<section v-if="inRegisterMode && userDetails.profilePicture">
-					<img
-						:src="userDetails.profilePicture"
-						alt="Profile picture preview" />
-					<IonButton
-						@click="removeImagePreview"
-						fill="default"
-						class="remove-image-preview">
-						<IonIcon
-							slot="icon-only"
-							:icon="trashOutline"
-							color="danger"></IonIcon>
-					</IonButton>
-				</section>
-				<IonButton @click="inRegisterMode ? register() : login()">
-					{{ inRegisterMode ? "Register" : "Login" }}
-				</IonButton>
-				<IonButton @click="inRegisterMode = !inRegisterMode">
-					{{
-						inRegisterMode
-							? "Already have an account?"
-							: "Don't have an account?"
-					}}
-				</IonButton>
-			</IonList>
+		<IonContent class="ion-padding custom-background">
+			<div class="login-content">
+				<IonCard class="login-card">
+					<IonList>
+						<IonListHeader>
+							<IonTitle class="ion-text-center">{{
+								inRegisterMode ? "Register" : "Login"
+							}}</IonTitle>
+						</IonListHeader>
+						<IonItem>
+							<IonLabel position="floating">Email</IonLabel>
+							<IonInput v-model="userDetails.email" type="email"></IonInput>
+						</IonItem>
+						<IonItem>
+							<IonLabel position="floating">Password</IonLabel>
+							<IonInput
+								v-model="userDetails.password"
+								type="password"></IonInput>
+						</IonItem>
+						<IonItem v-if="inRegisterMode">
+							<IonLabel position="floating">Name</IonLabel>
+							<IonInput v-model="userDetails.name" type="text"></IonInput>
+						</IonItem>
+						<IonItem v-if="inRegisterMode">
+							<IonLabel position="floating">Username</IonLabel>
+							<IonInput v-model="userDetails.userName" type="text"></IonInput>
+						</IonItem>
+						<IonItem v-if="inRegisterMode && !userDetails.profilePicture">
+							<IonButton
+								@click="triggerCamera"
+								class="image-picker"
+								color="light">
+								Add Profile Picture
+							</IonButton>
+						</IonItem>
+						<section v-if="inRegisterMode && userDetails.profilePicture">
+							<img
+								:src="userDetails.profilePicture"
+								alt="Profile picture preview" />
+							<IonButton
+								@click="removeImagePreview"
+								fill="default"
+								class="remove-image-preview">
+								<IonIcon
+									slot="icon-only"
+									:icon="trashOutline"
+									color="danger"></IonIcon>
+							</IonButton>
+						</section>
+						<IonButton
+							class="ion-center"
+							sise="default"
+							@click="inRegisterMode ? register() : login()">
+							{{ inRegisterMode ? "Register" : "Login" }}
+						</IonButton>
+						<IonButton size="default" @click="inRegisterMode = !inRegisterMode">
+							{{ inRegisterMode ? "Already have an account?" : "Register?" }}
+						</IonButton>
+					</IonList>
+				</IonCard>
+			</div>
 		</IonContent>
 	</IonPage>
 </template>
 <style scoped>
-ion-list {
+.custom-background {
+	--background: linear-gradient(135deg, #00f2fe 0%, #d54ffe 100%);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 100vh;
+}
+
+.login-content {
 	display: flex;
 	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	height: 100%;
+	width: 100%;
+}
+.login-card {
+	width: 85vw;
+	max-width: 400px;
+	margin: auto;
+	border-radius: 20px;
+
+	padding: 20px;
+	background: rgb(31, 30, 30);
 }
 
-.label-mild {
-	--color: #8a8a8a !important;
-}
-
-.button-auth {
-	margin-top: 50px;
-	margin-left: 10px;
-	margin-right: 10px;
-}
 .image-picker {
-	height: 20vh;
-	margin: 10px;
-	border: 2px #8a8a8a dashed;
+	height: auto;
+	padding: 10px;
+	border: 2px dashed #8a8a8a;
 	border-radius: 8px;
 	font-size: medium;
+	text-align: center;
+	cursor: pointer;
 }
 </style>

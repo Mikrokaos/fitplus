@@ -35,8 +35,13 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
-import { add, trashOutline } from "ionicons/icons";
+import { add, camera, cameraOutline, trashOutline } from "ionicons/icons";
 import { IActivityType } from "@/types/ActivityType";
+
+interface SelectCustomEvent<T> {
+	detail: { value: T };
+	target: HTMLIonSelectElement;
+}
 
 const router = useRouter();
 
@@ -47,8 +52,8 @@ const newActivity = ref({
 	type: "",
 	duration: 0,
 	calorieConsumption: 0,
-	timestamp: Date.now(), // Current date and time
-	// userNickname: "",
+	timestamp: Date.now(),
+	userName: "",
 	notes: "",
 	imageUrl: "",
 	id: "",
@@ -57,6 +62,11 @@ const newActivity = ref({
 const activityTypes: Ref<IActivityType[]> = ref([]);
 
 const activityCollection = collection(getFirestore(), "activities");
+
+const handleTypeChange = (event: SelectCustomEvent<string>) => {
+	newActivity.value.type = event.detail.value;
+	console.log("Selected type:", newActivity.value.type);
+};
 
 // Open the device camera or file picker
 const triggerCamera = async () => {
@@ -99,12 +109,18 @@ const postNewActivity = async () => {
 
 		// Preparing the activity object with the imageUrl
 		const activityData = {
-			...newActivity.value,
+			type: newActivity.value.type,
+			duration: Number(newActivity.value.duration),
+			calorieConsumption: Number(newActivity.value.calorieConsumption),
+			timestamp: Date.now(),
+			userName: "", // TODO - Replace with the userName from the user's profile
+			notes: newActivity.value.notes,
 			imageUrl: imageUrl,
-			id: generateUUID,
 		};
 
-		await setDoc(doc(activityCollection, generateUUID), newActivity.value);
+		console.log(activityData);
+
+		await setDoc(doc(activityCollection, generateUUID), activityData);
 
 		const successToast = await toastController.create({
 			message: "Activity added successfully!",
@@ -113,8 +129,7 @@ const postNewActivity = async () => {
 			color: "success",
 		});
 		await successToast.present();
-		// Redirecting to the home page
-		router.replace("/home");
+		router.replace("/activity");
 	} catch (error) {
 		const errorToast = await toastController.create({
 			message: "Something went wrong, please try again",
@@ -133,7 +148,6 @@ async function fetchActivityTypes(): Promise<IActivityType[]> {
 		...(doc.data() as IActivityType),
 		id: doc.id,
 	}));
-	console.log(types); // Check the fetched data
 	return types;
 }
 
@@ -170,7 +184,9 @@ const formIsValid = computed(() => {
 			<ion-list>
 				<ion-item>
 					<ion-label>Activity Type</ion-label>
-					<ion-select v-model="newActivity.type" placeholder="Select One">
+					<ion-select
+						@ionChange="handleTypeChange($event)"
+						placeholder="Select One">
 						<ion-select-option
 							v-for="type in activityTypes"
 							:value="type.name"
@@ -198,9 +214,10 @@ const formIsValid = computed(() => {
 				</ion-item>
 
 				<ion-item>
-					<ion-button @click="triggerCamera" expand="block"
-						>Upload Image</ion-button
-					>
+					<ion-button
+						@click="triggerCamera"
+						:icon="camera"
+						fill="outline"></ion-button>
 					<ion-button
 						@click="removeImagePreview"
 						color="danger"
@@ -213,7 +230,7 @@ const formIsValid = computed(() => {
 					<img
 						:src="newActivity.imageUrl"
 						alt="Activity image"
-						style="max-width: 100%" />
+						style="max-width: 50%" />
 				</ion-item>
 
 				<ion-button

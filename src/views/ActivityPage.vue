@@ -1,43 +1,105 @@
-<script lang="ts">
+<script setup lang="ts">
 import {
-	IonCard,
+	onIonViewDidEnter,
+	IonContent,
+	IonButtons,
+	IonButton,
+	IonCardContent,
 	IonCardHeader,
 	IonCardTitle,
-	IonCardContent,
-	IonImg,
+	IonCardSubtitle,
+	IonCard,
+	IonHeader,
+	IonPage,
+	IonTitle,
+	IonToolbar,
+	IonIcon,
 } from "@ionic/vue";
-import { defineComponent } from "vue";
-import { IActivity } from "@/models/ActivityModels";
+import { collection, getDocs, getFirestore } from "firebase/firestore";
+import { useRouter } from "vue-router";
+import { ref } from "vue";
+import { authService } from "@/services/firebase.AuthService";
+import { addCircleOutline } from "ionicons/icons";
+import ActivityCard from "@/components/ActivityCard.vue";
 
-export default defineComponent({
-	components: { IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonImg },
-	props: {
-		activity: {
-			type: Object as () => IActivity,
-			required: true,
-		},
-	},
-	methods: {
-		navigateToDetail(id?: string) {
-			if (id) {
-				this.$router.push({ name: "ActivityDetail", params: { id } });
-			}
-		},
-	},
+const currentUserData = ref(null);
+const db = getFirestore();
+const activities = ref([]);
+const router = useRouter();
+
+const currentUser = () => {
+	return authService.currentUser();
+};
+
+const login = () => {
+	router.push("/authentication");
+};
+
+const logout = async () => {
+	try {
+		await authService.logout();
+		currentUserData.value = null;
+	} catch (error) {
+		console.error(error);
+	}
+};
+
+onIonViewDidEnter(async () => {
+	currentUserData.value = await currentUser();
+	fetchActivities();
 });
+
+const refreshActivities = async (event: CustomEvent) => {
+	await fetchActivities();
+	if (event && event.target) {
+		(event.target as HTMLIonRefresherElement).complete();
+	}
+};
+
+const fetchActivities = async () => {
+	const results = [];
+	const activitiesSnapshot = await getDocs(collection(db, "activities"));
+	activitiesSnapshot.forEach((doc) => {
+		// Avoid pushing the id field inside the document data
+		const activityData = doc.data();
+		results.push({
+			...activityData,
+			id: doc.id, // id is used here as a unique key for rendering purposes
+		});
+	});
+	activities.value = results;
+};
 </script>
 
 <template>
-	<ion-card @click="navigateToDetail(activity.id)">
-		<ion-card-header>
-			<ion-card-title>{{ activity.type }}</ion-card-title>
-		</ion-card-header>
-		<ion-card-content>
-			<div>Duration: {{ activity.duration }} minutes</div>
-			<div>Calories: {{ activity.calorieConsumption }}</div>
-			<ion-img
-				:src="activity.imageUrl"
-				v-if="activity.imageUrl || /img/defaultActivity"></ion-img>
-		</ion-card-content>
-	</ion-card>
+	<IonPage>
+		<IonHeader>
+			<IonToolbar>
+				<IonTitle>FitPlus</IonTitle>
+				<IonButtons slot="end">
+					<IonButton :router-link="'/new-activity'">
+						<IonIcon :icon="addCircleOutline" />
+					</IonButton>
+				</IonButtons>
+			</IonToolbar>
+		</IonHeader>
+		<IonContent class="custom-background" :fullscreen="true">
+			<div v-if="activities.length">
+				<ActivityCard
+					v-for="activity in activities"
+					:key="activity.id"
+					:activity="activity"
+					:defaultImageUrl="defaultImageUrl" />
+			</div>
+			<div v-else>
+				<p>No activities logged yet.</p>
+			</div>
+		</IonContent>
+	</IonPage>
 </template>
+
+<style scoped>
+.custom-background {
+	--background: linear-gradient(135deg, #542663 20%, #59f16d 100%);
+}
+</style>

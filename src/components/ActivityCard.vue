@@ -4,10 +4,10 @@ import {
 	IonCardHeader,
 	IonCardTitle,
 	IonCardContent,
-	IonImg,
 } from "@ionic/vue";
+import ActivityImage from "./ActivityImage.vue"; // Adjust the import path to where your ImageCard is located
 import { defineComponent, PropType } from "vue";
-import { IActivity } from "@/models/ActivityModels"; // Adjust the import path as necessary
+import { IActivity } from "../models/ActivityModels";
 
 export default defineComponent({
 	name: "ActivityCard",
@@ -16,7 +16,7 @@ export default defineComponent({
 		IonCardHeader,
 		IonCardTitle,
 		IonCardContent,
-		IonImg,
+		ActivityImage, // Register the ImageCard component
 	},
 	props: {
 		activity: {
@@ -25,24 +25,38 @@ export default defineComponent({
 		},
 		defaultImageUrl: {
 			type: String,
-			default: "gs://fitplustds200.appspot.com/images/defaultActivity.jpg", // Provide a default image URL
+			default: "gs://fitplustds200.appspot.com/images/defaultActivity.jpg", // Need to make this work
 		},
 	},
 });
 </script>
+
 <template>
-	<ion-card>
+	<ion-card class="activity-card">
 		<ion-card-header>
 			<ion-card-title>{{ activity.type }}</ion-card-title>
 		</ion-card-header>
 		<ion-card-content>
-			<p>Duration: {{ activity.duration }} minutes</p>
-			<p>Calories Burned: {{ activity.calorieConsumption }}</p>
-			<p>Nickname: {{ activity.userNickname }}</p>
-			<p>Notes: {{ activity.notes || "No notes" }}</p>
-			<ion-img
-				:src="activity.imageUrl || defaultImageUrl"
-				alt="Activity Image"></ion-img>
+			<activity-image :imageURL="activity.imageUrl || defaultImageUrl" />
+			<div class="activity-details">
+				<p>Duration: {{ activity.duration }} minutes</p>
+				<p>Calories Burned: {{ activity.calorieConsumption }}</p>
+				<p>{{ activity.userName }}</p>
+				<p>Notes: {{ activity.notes || "No notes" }}</p>
+			</div>
 		</ion-card-content>
 	</ion-card>
 </template>
+
+<style scoped>
+.activity-card {
+	max-width: 600px; /* Set the maximum width of the card */
+	margin: auto; /* Center the card */
+	margin-bottom: 16px; /* Add some margin at the bottom of the card */
+	margin-top: 10px;
+}
+
+.activity-details {
+	padding: 16px; /* Add some padding inside the card for the text */
+}
+</style>

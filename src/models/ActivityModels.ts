@@ -4,7 +4,7 @@ export interface IActivity {
 	duration: number;
 	calorieConsumption: number;
 	timestamp: number;
-	userNickname: string;
+	userName: string;
 	notes?: string;
 	imageUrl?: string;
 }
