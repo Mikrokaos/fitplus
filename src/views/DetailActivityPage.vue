@@ -46,7 +46,7 @@ import {
 	updateDoc,
 	doc,
 } from "firebase/firestore";
-import { User, getAuth } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 import { authService } from "@/services/firebase.AuthService";
 import { Geolocation } from "@capacitor/geolocation";
 import { GoogleMap } from "@capacitor/google-maps";
@@ -75,7 +75,7 @@ const back = () => {
 };
 
 onIonViewDidEnter(async () => {
-	currentUserData.value = await authService.currentUser() as User | null;
+	currentUserData.value = getAuth().currentUser;
 	await fetchActivities();
 	console.log("Activity", activity.value);
 	await readGeoLocation();
@@ -98,7 +98,7 @@ const readGeoLocation = async () => {
 		const myMap = await GoogleMap.create({
 			id: "my-google-map", // Unique identifier for this map instance
 			element: myMapRef.value, // reference to the capacitor-google-map element
-			apiKey: process.env.VUE_APP_GOOGLE_MAPS_API_KEY || "" // Your Google Maps API Key
+			apiKey: process.env.VUE_APP_GOOGLE_MAPS_API_KEY || "", // Your Google Maps API Key
 			config: {
 				center: {
 					// The initial position to be rendered by the map

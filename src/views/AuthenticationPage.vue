@@ -10,11 +10,12 @@ import {
 	IonListHeader,
 	IonPage,
 	IonTitle,
+	IonText,
 	IonToggle,
 	toastController,
 } from "@ionic/vue";
-import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { ref, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { Camera, CameraResultType } from "@capacitor/camera";
 import {
 	getFirestore,
@@ -25,7 +26,7 @@ import {
 	query,
 	where,
 } from "firebase/firestore";
-import { trashOutline } from "ionicons/icons";
+import { trashOutline, cameraOutline } from "ionicons/icons";
 import {
 	getStorage,
 	uploadBytes,
@@ -35,9 +36,11 @@ import {
 import { v4 as uuidv4 } from "uuid";
 
 const router = useRouter();
+const route = useRoute();
 
 const db = getFirestore();
 
+const inLoginMode = ref(false);
 const inRegisterMode = ref(false);
 
 const userDetails = ref({
@@ -51,6 +54,18 @@ const userDetails = ref({
 
 const userProfilesCollection = collection(getFirestore(), "userProfile");
 
+onMounted(() => {
+	const authAction = route.query.authAction;
+	console.log("Auth action:", authAction);
+	if (authAction === "register") {
+		inRegisterMode.value = true;
+		inLoginMode.value = false;
+	} else if (authAction === "login") {
+		inLoginMode.value = true;
+		inRegisterMode.value = false;
+	}
+});
+
 const login = async () => {
 	try {
 		const user = await authService.login(
@@ -60,7 +75,7 @@ const login = async () => {
 		const idToken = await user.getIdToken(true);
 		localStorage.setItem("idToken", idToken);
 		localStorage.removeItem("isGuest"); // Remove the guest flag if it exists
-		router.replace("/home");
+		router.replace("/activity");
 	} catch (error) {
 		const toast = await toastController.create({
 			message: "Invalid email or password",
@@ -76,6 +91,10 @@ const isUserNameUnique = async (userName: string) => {
 		query(userProfilesCollection, where("userName", "==", userName))
 	);
 	return querySnapshot.empty;
+};
+
+const navigateToRegister = () => {
+	inRegisterMode.value = true;
 };
 
 const register = async () => {
@@ -119,7 +138,7 @@ const logout = async () => {
 	try {
 		await authService.logout();
 		localStorage.removeItem("idToken");
-		router.replace("/login");
+		router.replace("/home");
 	} catch (error) {
 		console.error(error);
 	}
@@ -166,7 +185,7 @@ const postProfilePicture = async () => {
 			color: "success",
 		});
 		await successToast.present();
-		router.replace("/home");
+		router.replace("/activity");
 	} catch {
 		const errorToast = await toastController.create({
 			message: "Something went wrong, please try again",
@@ -177,6 +196,10 @@ const postProfilePicture = async () => {
 		await errorToast.present();
 	}
 };
+
+const navigateToLogin = () => {
+	inRegisterMode.value = false;
+};
 </script>
 <template>
 	<IonPage>
@@ -185,58 +208,56 @@ const postProfilePicture = async () => {
 				<IonCard class="login-card">
 					<IonList>
 						<IonListHeader>
-							<IonTitle class="ion-text-center">{{
-								inRegisterMode ? "Register" : "Login"
-							}}</IonTitle>
+							<IonTitle class="ion-text-center title">
+								{{ inRegisterMode ? "Register" : "Login" }}
+							</IonTitle>
 						</IonListHeader>
-						<IonItem>
+
+						<IonItem class="input-item">
 							<IonLabel position="floating">Email</IonLabel>
 							<IonInput v-model="userDetails.email" type="email"></IonInput>
 						</IonItem>
-						<IonItem>
+
+						<IonItem class="input-item">
 							<IonLabel position="floating">Password</IonLabel>
 							<IonInput
 								v-model="userDetails.password"
 								type="password"></IonInput>
 						</IonItem>
-						<IonItem v-if="inRegisterMode">
-							<IonLabel position="floating">Name</IonLabel>
-							<IonInput v-model="userDetails.name" type="text"></IonInput>
-						</IonItem>
-						<IonItem v-if="inRegisterMode">
-							<IonLabel position="floating">Username</IonLabel>
-							<IonInput v-model="userDetails.userName" type="text"></IonInput>
-						</IonItem>
-						<IonItem v-if="inRegisterMode && !userDetails.profilePicture">
-							<IonButton
-								@click="triggerCamera"
-								class="image-picker"
-								color="light">
-								Add Profile Picture
-							</IonButton>
-						</IonItem>
-						<section v-if="inRegisterMode && userDetails.profilePicture">
-							<img
-								:src="userDetails.profilePicture"
-								alt="Profile picture preview" />
-							<IonButton
-								@click="removeImagePreview"
-								fill="default"
-								class="remove-image-preview">
-								<IonIcon
-									slot="icon-only"
-									:icon="trashOutline"
-									color="danger"></IonIcon>
-							</IonButton>
-						</section>
+
+						<template v-if="inRegisterMode">
+							<IonItem class="input-item">
+								<IonLabel position="floating">Name</IonLabel>
+								<IonInput v-model="userDetails.name" type="text"></IonInput>
+							</IonItem>
+							<IonItem class="input-item">
+								<IonLabel position="floating">Username</IonLabel>
+								<IonInput v-model="userDetails.userName" type="text"></IonInput>
+							</IonItem>
+							<div class="profile-pic-upload">
+								<IonButton fill="clear" @click="triggerCamera" color="white">
+									<IonIcon
+										:icon="cameraOutline"
+										size="large"
+										color="light"></IonIcon>
+								</IonButton>
+								<div v-if="userDetails.profilePicture" class="image-preview">
+									<img
+										:src="userDetails.profilePicture"
+										alt="Profile picture preview" />
+									<IonButton fill="clear" @click="removeImagePreview">
+										<IonIcon :icon="trashOutline" color="danger"></IonIcon>
+									</IonButton>
+								</div>
+							</div>
+						</template>
+
 						<IonButton
-							class="ion-center"
-							sise="default"
-							@click="inRegisterMode ? register() : login()">
-							{{ inRegisterMode ? "Register" : "Login" }}
-						</IonButton>
-						<IonButton size="default" @click="inRegisterMode = !inRegisterMode">
-							{{ inRegisterMode ? "Already have an account?" : "Register?" }}
+							expand="block"
+							@click="inRegisterMode ? register() : login()"
+							class="auth-button"
+							color="light">
+							{{ inRegisterMode ? "Confirm" : "Login" }}
 						</IonButton>
 					</IonList>
 				</IonCard>
@@ -244,9 +265,10 @@ const postProfilePicture = async () => {
 		</IonContent>
 	</IonPage>
 </template>
+
 <style scoped>
 .custom-background {
-	--background: linear-gradient(135deg, #00f2fe 0%, #d54ffe 100%);
+	--background: #a7a2a2;
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -258,26 +280,44 @@ const postProfilePicture = async () => {
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
-	height: 100%;
 	width: 100%;
 }
+
 .login-card {
 	width: 85vw;
 	max-width: 400px;
 	margin: auto;
-	border-radius: 20px;
-
+	border-radius: 8px;
 	padding: 20px;
-	background: rgb(31, 30, 30);
+	background: #1f1e1e;
 }
 
-.image-picker {
-	height: auto;
-	padding: 10px;
-	border: 2px dashed #8a8a8a;
-	border-radius: 8px;
-	font-size: medium;
-	text-align: center;
-	cursor: pointer;
+.title {
+	font-size: 1.5rem; /* Adjust title font size */
+}
+
+.input-item {
+	--padding-start: 0;
+	--padding-end: 0;
+	--inner-padding-end: 0;
+	--inner-padding-start: 0;
+}
+
+.profile-pic-upload {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	margin-top: 15px;
+}
+
+.image-preview img {
+	width: 100px; /* Adjust image preview size */
+	height: 100px;
+	object-fit: cover;
+	border-radius: 50%;
+}
+
+.auth-button {
+	margin-top: 20px;
 }
 </style>

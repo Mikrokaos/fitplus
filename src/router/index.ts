@@ -23,8 +23,9 @@ const routes: Array<RouteRecordRaw> = [
 	},
 	{
 		path: "/authentication",
-		name: "Login",
+		name: "Authentication",
 		component: AuthenticationPage,
+		props: true,
 	},
 	{
 		path: "/activity",

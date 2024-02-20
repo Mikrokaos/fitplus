@@ -125,18 +125,13 @@ const postNewActivity = async () => {
 		const imageName = `activities/${generateUUID}-${new Date().getTime()}.jpg`;
 		let imageUrl = ""; // Initialize imageUrl variable
 
-		if (!isGuest && newActivity.value.imageUrl) {
-			// If user has uploaded an image, upload it to Firebase Storage
-			const storage = getStorage();
-			const imageRef = storageRef(storage, imageName);
-			const response = await fetch(newActivity.value.imageUrl);
-			const blob = await response.blob();
-			const snapshot = await uploadBytes(imageRef, blob);
-			imageUrl = await getDownloadURL(snapshot.ref);
-		} else {
-			// Use the default image URL if the user hvaent uploaded an image
-			imageUrl = "gs://fitplustds200.appspot.com/images/defaultActivity.jpg";
-		}
+		// If user has uploaded an image, upload it to Firebase Storage
+		const storage = getStorage();
+		const imageRef = storageRef(storage, imageName);
+		const response = await fetch(newActivity.value.imageUrl);
+		const blob = await response.blob();
+		const snapshot = await uploadBytes(imageRef, blob);
+		imageUrl = await getDownloadURL(snapshot.ref);
 
 		// Preparing the activity object with the imageUrl
 		const activityData = {

@@ -16,6 +16,10 @@ import AuthenticationPage from "./AuthenticationPage.vue";
 
 const router = useRouter();
 
+const goToAuth = (authAction) => {
+	router.push({ name: "Authentication", query: { authAction: authAction } });
+};
+
 const continueAsGuest = () => {
 	localStorage.setItem("isGuest", "true");
 	router.push("/activity");
@@ -32,11 +36,11 @@ const continueAsGuest = () => {
 					</IonCardHeader>
 					<IonCardContent>
 						<div class="action-buttons">
-							<IonButton :router-link="'/authentication'" color="black"
-								>Register</IonButton
-							>
-							<IonButton :router-link="'/authentication'" color="black"
+							<IonButton @click="goToAuth('login')" color="black"
 								>Login</IonButton
+							>
+							<IonButton @click="goToAuth('register')" color="black"
+								>Register</IonButton
 							>
 							<IonButton @click="continueAsGuest" color="black"
 								>Continue as Guest</IonButton
@@ -51,7 +55,7 @@ const continueAsGuest = () => {
 
 <style scoped>
 .custom-background {
-	--background: linear-gradient(135deg, #d54ffe 20%, #00f2fe 100%);
+	--background: #a7a2a2;
 }
 
 .welcome-card {

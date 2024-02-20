@@ -19,7 +19,7 @@ import { collection, getDocs, getFirestore } from "firebase/firestore";
 import { useRouter } from "vue-router";
 import { ref } from "vue";
 import { authService } from "@/services/firebase.AuthService";
-import { addCircleOutline } from "ionicons/icons";
+import { addCircleOutline, arrowBackOutline } from "ionicons/icons";
 import ActivityCard from "@/components/ActivityCard.vue";
 
 const currentUserData = ref(null);
@@ -30,6 +30,9 @@ const router = useRouter();
 const currentUser = () => {
 	return authService.currentUser();
 };
+
+const defaultImageUrl =
+	"https://firebasestorage.googleapis.com/v0/b/fitplustds200.appspot.com/o/images%2FdefaultActivity.jpg?alt=media&token=your-token";
 
 const logout = async () => {
 	try {
@@ -65,17 +68,26 @@ const fetchActivities = async () => {
 	});
 	activities.value = results;
 };
+
+console.log(defaultImageUrl);
+
+const goBack = () => {
+	router.back();
+};
 </script>
 
 <template>
 	<IonPage>
 		<IonHeader>
 			<IonToolbar>
+				<IonButtons slot="start">
+					<IonButton @click="goBack">
+						<IonIcon :icon="arrowBackOutline" />
+					</IonButton>
+				</IonButtons>
 				<IonTitle>FitPlus</IonTitle>
 				<IonButtons slot="end">
-					<IonButton :router-link="'/new-activity'">
-						<IonIcon :icon="addCircleOutline" />
-					</IonButton>
+					<IonMenuButton></IonMenuButton>
 				</IonButtons>
 			</IonToolbar>
 		</IonHeader>
@@ -85,17 +97,24 @@ const fetchActivities = async () => {
 					v-for="activity in activities"
 					:key="activity.id"
 					:activity="activity"
-					:defaultImageUrl="defaultImageUrl" />
+					:default-image-url="defaultImageUrl" />
 			</div>
 			<div v-else>
 				<p>No activities logged yet.</p>
 			</div>
 		</IonContent>
+		<IonFooter>
+			<IonToolbar>
+				<IonButton color="black" :router-link="'/new-activity'">
+					<IonIcon :icon="addCircleOutline" />
+				</IonButton>
+			</IonToolbar>
+		</IonFooter>
 	</IonPage>
 </template>
 
 <style scoped>
 .custom-background {
-	--background: linear-gradient(135deg, #542663 20%, #327a3b 100%);
+	--background: #a7a2a2;
 }
 </style>
