@@ -36,11 +36,18 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
-import { add, camera, cameraOutline, trashOutline } from "ionicons/icons";
+import {
+	add,
+	camera,
+	cameraOutline,
+	logOut,
+	trashOutline,
+} from "ionicons/icons";
 import { IActivityType } from "@/types/ActivityType";
 import { getAuth, updateCurrentUser } from "firebase/auth";
 import { authService } from "@/services/firebase.AuthService";
 import { IUserProfile } from "../types/UserProfile";
+import MapPicker from "@/components/MapPicker.vue";
 
 interface SelectCustomEvent<T> {
 	detail: { value: T };
@@ -77,6 +84,11 @@ const handleTypeChange = (event: SelectCustomEvent<string>) => {
 	console.log("Selected type:", newActivity.value.type);
 };
 
+const handleLocationChange = (location) => {
+	newActivity.value.location = location;
+	console.log("Location updated:", location);
+};
+
 // Fetch the user's name from the user profile
 const fetchUserProfile = async (userId: string) => {
 	const userRef = doc(db, "userProfile", userId);
@@ -104,6 +116,8 @@ const triggerCamera = async () => {
 
 	if (photo.webPath) {
 		newActivity.value.imageUrl = photo.webPath;
+	} else {
+		console.error("No photo taken");
 	}
 };
 
@@ -114,6 +128,11 @@ const removeImagePreview = () => {
 
 //Handle data POSTing
 const postNewActivity = async () => {
+	if (!formIsValid.value) {
+		alert("Please fill in all required fields");
+		return;
+	}
+
 	if (isGuest.value && newActivity.value.imageUrl) {
 		alert("Guest user cannot upload images. Please register or log in");
 		return;
@@ -143,6 +162,10 @@ const postNewActivity = async () => {
 			notes: newActivity.value.notes,
 			imageUrl: imageUrl,
 		};
+
+		if (!newActivity.value.imageUrl) {
+			activityData.imageUrl = "";
+		}
 
 		console.log(activityData);
 
@@ -239,6 +262,8 @@ const formIsValid = computed(() => {
 					<ion-textarea v-model="newActivity.notes"></ion-textarea>
 				</ion-item>
 
+				<MapPicker @location-changed="handleLocationChange" />
+
 				<ion-item>
 					<ion-button
 						@click="triggerCamera"
@@ -262,7 +287,7 @@ const formIsValid = computed(() => {
 				<ion-button
 					@click="postNewActivity"
 					expand="block"
-					:disabled="!formIsValid.valueOf"
+					:disabled="!formIsValid"
 					>Submit Activity</ion-button
 				>
 			</ion-list>

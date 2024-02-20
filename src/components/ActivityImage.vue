@@ -3,7 +3,8 @@ interface Props {
 	imageURL: string;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
+console.log(props.imageURL);
 </script>
 
 <template>

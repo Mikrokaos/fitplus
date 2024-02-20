@@ -8,6 +8,7 @@ import {
 import ActivityImage from "./ActivityImage.vue";
 import { defineComponent, PropType } from "vue";
 import { IActivity } from "../models/ActivityModels";
+import defaultActivityImage from "@/assets/defaultActivity.jpg";
 
 export default defineComponent({
 	name: "ActivityCard",
@@ -25,8 +26,7 @@ export default defineComponent({
 		},
 		defaultImageUrl: {
 			type: String,
-			default:
-				"https://firebasestorage.googleapis.com/v0/b/fitplustds200.appspot.com/o/images%2FdefaultActivity.jpg?alt=media&token=554ba669-7227-4766-a276-4555c2440e0b", // Need to make this work
+			default: defaultActivityImage,
 		},
 	},
 });

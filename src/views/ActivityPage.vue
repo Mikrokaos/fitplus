@@ -21,6 +21,7 @@ import { ref } from "vue";
 import { authService } from "@/services/firebase.AuthService";
 import { addCircleOutline, arrowBackOutline } from "ionicons/icons";
 import ActivityCard from "@/components/ActivityCard.vue";
+import defaultActivityImage from "@/assets/defaultActivity.jpg";
 
 const currentUserData = ref(null);
 const db = getFirestore();
@@ -30,9 +31,6 @@ const router = useRouter();
 const currentUser = () => {
 	return authService.currentUser();
 };
-
-const defaultImageUrl =
-	"https://firebasestorage.googleapis.com/v0/b/fitplustds200.appspot.com/o/images%2FdefaultActivity.jpg?alt=media&token=your-token";
 
 const logout = async () => {
 	try {
@@ -69,8 +67,6 @@ const fetchActivities = async () => {
 	activities.value = results;
 };
 
-console.log(defaultImageUrl);
-
 const goBack = () => {
 	router.back();
 };
@@ -80,11 +76,6 @@ const goBack = () => {
 	<IonPage>
 		<IonHeader>
 			<IonToolbar>
-				<IonButtons slot="start">
-					<IonButton @click="goBack">
-						<IonIcon :icon="arrowBackOutline" />
-					</IonButton>
-				</IonButtons>
 				<IonTitle>FitPlus</IonTitle>
 				<IonButtons slot="end">
 					<IonMenuButton></IonMenuButton>
@@ -95,16 +86,17 @@ const goBack = () => {
 			<div v-if="activities.length">
 				<ActivityCard
 					v-for="activity in activities"
+					:router-link="'/activity/' + activity.id"
 					:key="activity.id"
 					:activity="activity"
-					:default-image-url="defaultImageUrl" />
+					:default-image-url="defaultActivityImage" />
 			</div>
 			<div v-else>
 				<p>No activities logged yet.</p>
 			</div>
 		</IonContent>
-		<IonFooter>
-			<IonToolbar>
+		<IonFooter position="sticky" color="black">
+			<IonToolbar class="toolbar-center">
 				<IonButton color="black" :router-link="'/new-activity'">
 					<IonIcon :icon="addCircleOutline" />
 				</IonButton>
@@ -116,5 +108,10 @@ const goBack = () => {
 <style scoped>
 .custom-background {
 	--background: #a7a2a2;
+}
+
+.toolbar-center {
+	display: flex;
+	justify-content: center;
 }
 </style>
