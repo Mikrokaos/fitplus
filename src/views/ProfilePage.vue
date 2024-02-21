@@ -37,10 +37,14 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { authService } from "@/services/firebase.AuthService";
 import defaultProfilePicture from "../assets/defaultProfilePic.png";
 
+// initializing firestore and storage
+
 const router = useRouter();
 const db = getFirestore();
 const storage = getStorage();
 const activities = ref([]);
+
+// setting up the user details object
 
 const userDetails = ref({
 	userName: "",
@@ -55,8 +59,11 @@ const goBack = () => {
 	router.back();
 };
 
+//life cycle hook to fetch user profile
+
 onMounted(() => {
 	const auth = getAuth();
+	//listening for auth state changes
 	onAuthStateChanged(auth, (user) => {
 		if (user) {
 			fetchUserProfile(user.uid);
@@ -66,11 +73,13 @@ onMounted(() => {
 	});
 });
 
+// fetching user profile from firestore
 const fetchUserProfile = async (uid) => {
 	try {
 		const userRef = doc(db, "userProfile", uid);
 		const userSnap = await getDoc(userRef);
 		if (userSnap.exists()) {
+			// if user exists, set the user details
 			const userData = userSnap.data();
 			userDetails.value = {
 				...userData,
@@ -84,6 +93,7 @@ const fetchUserProfile = async (uid) => {
 	}
 };
 
+// updating user profile
 const updateProfile = async () => {
 	const user = authService.currentUser();
 	if (user) {
@@ -95,13 +105,14 @@ const updateProfile = async () => {
 	}
 };
 
+//triggering the camera to change profile picture
 const triggerCamera = async () => {
 	const image = await Camera.getPhoto({
 		quality: 90,
 		allowEditing: true,
 		resultType: CameraResultType.Uri,
 	});
-
+	// if image is taken, update the profile picture
 	const blob = await fetch(image.webPath).then((res) => res.blob());
 	const storagePath = `profilePictures/${authService.currentUser().uid}`;
 	const imageRef = storageRef(storage, storagePath);

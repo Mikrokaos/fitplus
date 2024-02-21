@@ -9,6 +9,7 @@ const props = defineProps({
 	initialLongitude: Number,
 });
 
+// Define reactive states and emit custom event
 const currentLatitude = ref(props.initialLatitude);
 const currentLongitude = ref(props.initialLongitude);
 const myMapRef = ref(null);
@@ -17,6 +18,7 @@ const emit = defineEmits(["location-changed"]);
 let myMap;
 let markerId;
 
+// Initialize or update the map with the provided coordinates
 const initializeOrUpdateMap = async (latitude, longitude) => {
 	if (!myMap) {
 		// Initialize the map

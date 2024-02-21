@@ -49,6 +49,7 @@ import defaultProfilePicture from "../assets/defaultProfilePic.png";
 
 const route = useRoute();
 
+//initialize constants and references
 const { id } = route.params;
 const isModalOpen = ref(false);
 const newCommentText = ref("");
@@ -69,6 +70,7 @@ const userDetails = ref({
 const activitiesRef = doc(activitiesCollection, id as string);
 console.log(id);
 
+// lifecycle hook to fetch the activity and comments
 onIonViewDidEnter(async () => {
 	currentUserData.value = getAuth().currentUser;
 	await fetchActivities();
@@ -76,6 +78,7 @@ onIonViewDidEnter(async () => {
 	console.log("Activity", activity.value);
 });
 
+//fetching the activity from Firestore
 const fetchActivities = async () => {
 	try {
 		const docSnap = await getDoc(activitiesRef);
@@ -95,7 +98,7 @@ const fetchComments = async () => {
 	if (!id) return;
 	comments.value = await fetchCommentsForActivity(id as string);
 };
-
+// lifecycle hook to fetch user profile data when mounted
 onMounted(() => {
 	const auth = getAuth();
 	onAuthStateChanged(auth, (user) => {
@@ -106,7 +109,7 @@ onMounted(() => {
 		}
 	});
 });
-
+// fetching user profile from firestore
 const fetchUserProfile = async (uid) => {
 	try {
 		const userRef = doc(db, "userProfile", uid);
@@ -127,6 +130,7 @@ const fetchUserProfile = async (uid) => {
 	}
 };
 
+// function to add a new comment
 const addComment = async () => {
 	const commentsCollectionRef = collection(
 		db,
@@ -134,31 +138,31 @@ const addComment = async () => {
 		id as string,
 		"comments"
 	);
-
+	// fetch the user profile, if the user is logged in. If not, use the default profile picture
 	let userProfile = { userName: "Guest", userAvatar: defaultProfilePicture };
 	if (currentUserData.value && currentUserData.value.uid) {
 		userProfile = await fetchUserProfile(currentUserData.value.uid);
 	}
-
+	// create a new comment object
 	const newComment = {
 		userId: currentUserData.value ? currentUserData.value.uid : "guest",
-		userName: userProfile.userName, // From fetched or default userProfile
-		userAvatar: userProfile.userAvatar, // From fetched or default userProfile
+		userName: userProfile.userName,
+		userAvatar: userProfile.userAvatar,
 		text: newCommentText.value,
 		timestamp: new Date(),
 	};
-
+	// add the new comment to the comments collection
 	try {
 		await addDoc(commentsCollectionRef, newComment);
 		console.log("Comment added");
 		isModalOpen.value = false;
 		newCommentText.value = "";
-		await fetchComments(); // Refresh comments list
+		await fetchComments();
 	} catch (error) {
 		console.error("Error adding comment", error);
 	}
 };
-
+// function to update the comments. Not working yet
 const updateComments = async (updatedComment: string) => {
 	try {
 		await setDoc(activitiesRef, { comments: updatedComment }, { merge: true });
@@ -167,24 +171,24 @@ const updateComments = async (updatedComment: string) => {
 		console.error("Error updating comments", error);
 	}
 };
+// function to delete a comment. I havent got this to work yet
 const deleteComment = async (commentId) => {
 	if (!id || !commentId) {
 		console.error("Activity ID or Comment ID is missing.");
 		return;
 	}
-
+	// delete the comment from the comments collection
 	try {
 		const commentRef = doc(db, "activities", id, "comments", commentId);
 		await deleteDoc(commentRef);
 		console.log(`Comment with ID ${commentId} deleted.`);
 
-		// Optionally, refresh comments list here
-		await fetchComments(); // This assumes you have a method to fetch comments
+		await fetchComments();
 	} catch (error) {
 		console.error("Error deleting comment", error);
 	}
 };
-
+// function for fetching the comments for an activity posted
 const fetchCommentsForActivity = async (activityId: string) => {
 	const commentsCollectionRef = collection(
 		db,

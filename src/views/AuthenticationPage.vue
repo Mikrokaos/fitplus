@@ -35,6 +35,7 @@ import {
 } from "firebase/storage";
 import { v4 as uuidv4 } from "uuid";
 
+// initializing storage and database, define reactive states
 const router = useRouter();
 const route = useRoute();
 const storage = getStorage();
@@ -43,9 +44,11 @@ const db = getFirestore();
 const inLoginMode = ref(false);
 const inRegisterMode = ref(false);
 
+// if no profile picture is provided, use the default profile picture
 const defaultProfilePic =
 	"https://firebasestorage.googleapis.com/v0/b/fitplustds200.appspot.com/o/profilePictures%2FdefaultProfilePic.png?alt=media&token=d3a65220-6f07-469e-a4ca-1ce4466a21f1";
 
+// define the user details object
 const userDetails = ref({
 	id: "",
 	name: "",
@@ -55,8 +58,7 @@ const userDetails = ref({
 	userName: "",
 });
 
-const userProfilesCollection = collection(getFirestore(), "userProfile");
-
+// lifecycle hook to check the auth action and set the mode accordingly
 onMounted(() => {
 	const authAction = route.query.authAction;
 	console.log("Auth action:", authAction);
@@ -69,12 +71,15 @@ onMounted(() => {
 	}
 });
 
+// function to login the user
 const login = async () => {
+	// call the login method from the auth service
 	try {
 		const user = await authService.login(
 			userDetails.value.email,
 			userDetails.value.password
 		);
+		// if the user is logging in as guest, get the id token and store it in local storage
 		const idToken = await user.getIdToken(true);
 		localStorage.setItem("idToken", idToken);
 		localStorage.removeItem("isGuest");
@@ -87,20 +92,21 @@ const login = async () => {
 		toast.present();
 	}
 };
-
+// function to register the user
 const register = async () => {
+	// call the register method from the auth service
 	try {
 		const userCredential = await authService.register(
 			userDetails.value.email,
 			userDetails.value.password
 		);
-
+		// if the user is registered successfully, create the user profile
 		if (userCredential && userCredential.uid) {
 			const uid = userCredential.uid;
 			let profilePictureUrl = userDetails.value.profilePicture
 				? await uploadProfilePicture(userDetails.value.profilePicture, uid)
 				: defaultProfilePic;
-
+			// set the user profile data in the firestore
 			await setDoc(doc(db, "userProfile", uid), {
 				name: userDetails.value.name,
 				email: userDetails.value.email,
@@ -109,6 +115,7 @@ const register = async () => {
 			});
 
 			console.log("User profile created with UID:", uid);
+			// login the user after registration
 			await login(userDetails.value.email, userDetails.value.password);
 		} else {
 			throw new Error("No user credential returned.");

@@ -24,15 +24,18 @@ import { addCircleOutline, logOutOutline, personCircle } from "ionicons/icons";
 import ActivityCard from "@/components/ActivityCard.vue";
 import defaultActivityImage from "@/assets/defaultActivity.jpg";
 
+// references, reactive states and firestore initialization
 const currentUserData = ref(null);
 const db = getFirestore();
 const activities = ref([]);
 const router = useRouter();
 
+// Fetching the current user
 const currentUser = () => {
 	return authService.currentUser();
 };
 
+// Logging out the user
 const logout = async () => {
 	try {
 		await authService.logout();
@@ -43,11 +46,13 @@ const logout = async () => {
 	router.push("/home");
 };
 
+// lifecycle hook to fetch activities and current user data
 onIonViewDidEnter(async () => {
 	currentUserData.value = await currentUser();
 	fetchActivities();
 });
 
+// Refreshing activities
 const refreshActivities = async (event: CustomEvent) => {
 	await fetchActivities();
 	if (event && event.target) {
@@ -69,13 +74,14 @@ const fetchActivities = async () => {
 	activities.value = results;
 };
 
+// Navigating to the authentication page based on the action
 const goToAuth = (authAction) => {
 	router.push({ name: "Authentication", query: { authAction: authAction } });
 };
 
 const goToProfile = async () => {
 	if (!currentUserData.value) {
-		// No user is logged in, show an alert with options to login or register
+		// if no user is logged in, show an alert
 		const alert = await alertController.create({
 			header: "Authentication Required",
 			message: "You need to log in to access the profile page.",
