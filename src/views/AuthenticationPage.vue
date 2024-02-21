@@ -31,13 +31,13 @@ import {
 	getStorage,
 	uploadBytes,
 	getDownloadURL,
-	ref as dbRef,
+	ref as storageRef,
 } from "firebase/storage";
 import { v4 as uuidv4 } from "uuid";
 
 const router = useRouter();
 const route = useRoute();
-
+const storage = getStorage();
 const db = getFirestore();
 
 const inLoginMode = ref(false);
@@ -88,63 +88,30 @@ const login = async () => {
 	}
 };
 
-const isUserNameUnique = async (userName: string) => {
-	const userProfilesCollection = collection(getFirestore(), "userProfile");
-	const querySnapshot = await getDocs(
-		query(userProfilesCollection, where("userName", "==", userName))
-	);
-	return querySnapshot.empty;
-};
-
-const navigateToRegister = () => {
-	inRegisterMode.value = true;
-};
-
 const register = async () => {
 	try {
-		const userNameUnique = await isUserNameUnique(userDetails.value.userName);
-		if (!userNameUnique) {
-			alert("Username already taken");
-			return;
-		}
-
 		const userCredential = await authService.register(
 			userDetails.value.email,
 			userDetails.value.password
 		);
 
-		if (userCredential && userCredential.user) {
-			const authUser = userCredential.user;
+		if (userCredential && userCredential.uid) {
+			const uid = userCredential.uid;
+			let profilePictureUrl = userDetails.value.profilePicture
+				? await uploadProfilePicture(userDetails.value.profilePicture, uid)
+				: defaultProfilePic;
 
-			// Initialize profilePictureUrl with a default picture
-			let profilePictureUrl = defaultProfilePic;
-
-			// Check if a profile picture has been chosen for upload
-			if (userDetails.value.profilePicture) {
-				try {
-					// Attempt to upload the profile picture and get the URL
-					profilePictureUrl = await postProfilePicture();
-				} catch (error) {
-					console.error("Failed to upload profile picture.", error);
-					// Optionally handle the error, e.g., by setting a default picture or notifying the user
-				}
-			}
-
-			// Prepare user profile data
-			const userProfileData = {
+			await setDoc(doc(db, "userProfile", uid), {
 				name: userDetails.value.name,
 				email: userDetails.value.email,
 				userName: userDetails.value.userName,
 				profilePicture: profilePictureUrl,
-			};
+			});
 
-			// Save user profile in Firestore using the Auth User's UID
-			await setDoc(doc(db, "userProfile", authUser.uid), userProfileData);
-
-			console.log("User profile created with UID:", authUser.uid);
-			await login(); // Log the user in after successful registration
+			console.log("User profile created with UID:", uid);
+			await login(userDetails.value.email, userDetails.value.password);
 		} else {
-			throw new Error("Registration failed: No user credential returned.");
+			throw new Error("No user credential returned.");
 		}
 	} catch (error) {
 		console.error("Registration error:", error);
@@ -152,15 +119,13 @@ const register = async () => {
 	}
 };
 
-const logout = async () => {
-	try {
-		await authService.logout();
-		localStorage.removeItem("idToken");
-		router.replace("/home");
-	} catch (error) {
-		console.error(error);
-	}
-};
+// Function to upload the profile picture to Firebase Storage and return the URL
+async function uploadProfilePicture(filePath, userId) {
+	const fileRef = storageRef(storage, `profilePictures/${userId}-${uuidv4()}`);
+	const blob = await fetch(filePath).then((r) => r.blob());
+	const snapshot = await uploadBytes(fileRef, blob);
+	return getDownloadURL(snapshot.ref);
+}
 
 const triggerCamera = async () => {
 	const image = await Camera.getPhoto({
@@ -176,47 +141,6 @@ const triggerCamera = async () => {
 
 const removeImagePreview = () => {
 	userDetails.value.profilePicture = "";
-};
-
-const postProfilePicture = async () => {
-	if (userDetails.value.profilePicture === "") {
-		alert("You have to upload a profile picture first!");
-		return;
-	}
-	try {
-		const generateUUID = uuidv4();
-		const imageName = `profilePictures/${generateUUID}-${new Date().getTime()}.jpg`;
-		const storage = getStorage();
-		const imageRef = dbRef(storage, imageName);
-		const response = await fetch(userDetails.value.profilePicture);
-		const blob = await response.blob();
-		const snapshot = await uploadBytes(imageRef, blob);
-		const url = await getDownloadURL(snapshot.ref);
-		userDetails.value.profilePicture = url;
-
-		userDetails.value.id = generateUUID;
-		await setDoc(doc(userProfilesCollection, generateUUID), userDetails.value);
-		const successToast = await toastController.create({
-			message: "Profile created successfully!",
-			duration: 2000,
-			position: "bottom",
-			color: "success",
-		});
-		await successToast.present();
-		router.replace("/activity");
-	} catch {
-		const errorToast = await toastController.create({
-			message: "Something went wrong, please try again",
-			duration: 2000,
-			position: "bottom",
-			color: "danger",
-		});
-		await errorToast.present();
-	}
-};
-
-const navigateToLogin = () => {
-	inRegisterMode.value = false;
 };
 </script>
 <template>

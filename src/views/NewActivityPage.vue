@@ -54,6 +54,7 @@ interface SelectCustomEvent<T> {
 	target: HTMLIonSelectElement;
 }
 
+const storage = getStorage();
 const userProfile = ref<IUserProfile | null>(null);
 const router = useRouter();
 const db = getFirestore();
@@ -131,69 +132,66 @@ const removeImagePreview = () => {
 	newActivity.value.imageUrl = "";
 };
 
+onMounted(async () => {
+	const user = authService.currentUser();
+	if (user) {
+		const userRef = doc(db, "userProfile", user.uid);
+		const docSnap = await getDoc(userRef);
+		if (docSnap.exists()) {
+			userProfile.value = docSnap.data(); // Assuming this contains userName
+		}
+	}
+});
+
 //Handle data POSTing
 const postNewActivity = async () => {
-	if (!formIsValid.value) {
+	if (
+		!newActivity.value.type ||
+		newActivity.value.duration <= 0 ||
+		newActivity.value.calorieConsumption <= 0
+	) {
 		alert("Please fill in all required fields");
 		return;
 	}
 
-	if (isGuest.value && newActivity.value.imageUrl) {
-		alert("Guest user cannot upload images. Please register or log in");
-		return;
-	}
-
 	try {
-		// Generating a Unique ID for the new activity
+		const userId = authService.currentUser()?.uid || "guest";
+		const userName = userProfile.value ? userProfile.value.userName : "Guest";
 		const generateUUID = uuidv4();
-		const imageName = `activities/${generateUUID}-${new Date().getTime()}.jpg`;
-		let imageUrl = ""; // Initialize imageUrl variable
+		let imageUrl = newActivity.value.imageUrl;
 
-		// If user has uploaded an image, upload it to Firebase Storage
-		const storage = getStorage();
-		const imageRef = storageRef(storage, imageName);
-		const response = await fetch(newActivity.value.imageUrl);
-		const blob = await response.blob();
-		const snapshot = await uploadBytes(imageRef, blob);
-		imageUrl = await getDownloadURL(snapshot.ref);
-
-		// Preparing the activity object with the imageUrl
-		const activityData = {
-			type: newActivity.value.type,
-			duration: Number(newActivity.value.duration),
-			calorieConsumption: Number(newActivity.value.calorieConsumption),
-			timestamp: Date.now(),
-			userName: isGuest.value ? "Guest" : "",
-			notes: newActivity.value.notes,
-			imageUrl: imageUrl,
-			location: newActivity.value.location,
-		};
-
-		if (!newActivity.value.imageUrl) {
-			activityData.imageUrl = "";
+		if (imageUrl) {
+			const imageName = `activities/${generateUUID}-${Date.now()}.jpg`;
+			const imageRef = storageRef(storage, imageName);
+			const blob = await (await fetch(imageUrl)).blob();
+			const snapshot = await uploadBytes(imageRef, blob);
+			imageUrl = await getDownloadURL(snapshot.ref);
 		}
 
-		console.log(activityData);
+		const activityData = {
+			...newActivity.value,
+			userName,
+			imageUrl,
+		};
 
 		await setDoc(doc(activityCollection, generateUUID), activityData);
-
-		const successToast = await toastController.create({
-			message: "Activity added successfully!",
-			duration: 2000,
-			position: "bottom",
-			color: "success",
-		});
-		await successToast.present();
+		toastController
+			.create({
+				message: "Activity added successfully!",
+				duration: 2000,
+				color: "success",
+			})
+			.then((toast) => toast.present());
 		router.replace("/activity");
 	} catch (error) {
-		const errorToast = await toastController.create({
-			message: "Something went wrong, please try again",
-			duration: 2000,
-			position: "bottom",
-			color: "danger",
-		});
-		await errorToast.present();
-		console.error(error);
+		toastController
+			.create({
+				message: `Error: ${error.message}`,
+				duration: 2000,
+				color: "danger",
+			})
+			.then((toast) => toast.present());
+		console.error("Error posting new activity", error);
 	}
 };
 
@@ -231,74 +229,87 @@ const formIsValid = computed(() => {
 				<ion-buttons slot="start">
 					<ion-back-button default-href="/"></ion-back-button>
 				</ion-buttons>
-				<ion-title>Add New Activity</ion-title>
+				<ion-title>FitPlus</ion-title>
 			</ion-toolbar>
 		</ion-header>
 
-		<ion-content :fullscreen="true">
-			<ion-list>
-				<ion-item>
-					<ion-label>Activity Type</ion-label>
-					<ion-select
-						@ionChange="handleTypeChange($event)"
-						placeholder="Select One">
-						<ion-select-option
-							v-for="type in activityTypes"
-							:value="type.name"
-							:key="type.id">
-							{{ type.name }}
-						</ion-select-option>
-					</ion-select>
-				</ion-item>
+		<ion-content :fullscreen="true" class="ion-padding">
+			<div style="max-width: 600px; margin: auto">
+				<ion-card>
+					<ion-card-header>
+						<ion-card-title>Add New Activity</ion-card-title>
+					</ion-card-header>
 
-				<ion-item>
-					<ion-label position="floating">Duration (minutes)</ion-label>
-					<ion-input type="number" v-model="newActivity.duration"></ion-input>
-				</ion-item>
+					<ion-card-content>
+						<ion-list>
+							<ion-item>
+								<ion-label>Activity Type</ion-label>
+								<ion-select
+									@ionChange="handleTypeChange($event)"
+									placeholder="Select One">
+									<ion-select-option
+										v-for="type in activityTypes"
+										:value="type.name"
+										:key="type.id">
+										{{ type.name }}
+									</ion-select-option>
+								</ion-select>
+							</ion-item>
 
-				<ion-item>
-					<ion-label position="floating">Calories Burned</ion-label>
-					<ion-input
-						type="number"
-						v-model="newActivity.calorieConsumption"></ion-input>
-				</ion-item>
+							<ion-item>
+								<ion-label position="floating">Duration (minutes)</ion-label>
+								<ion-input
+									type="number"
+									v-model="newActivity.duration"></ion-input>
+							</ion-item>
 
-				<ion-item>
-					<ion-label position="floating">Notes (optional)</ion-label>
-					<ion-textarea v-model="newActivity.notes"></ion-textarea>
-				</ion-item>
+							<ion-item>
+								<ion-label position="floating">Calories Burned</ion-label>
+								<ion-input
+									type="number"
+									v-model="newActivity.calorieConsumption"></ion-input>
+							</ion-item>
 
-				<MapPicker
-					mode="editable"
-					:initialLatitude="currentLatitude"
-					:initialLongitude="currentLongitude"
-					@location-changed="handleLocationChange" />
+							<ion-item>
+								<ion-label position="floating">Notes (optional)</ion-label>
+								<ion-textarea v-model="newActivity.notes"></ion-textarea>
+							</ion-item>
 
-				<ion-item>
-					<ion-button @click="triggerCamera" color="black">
-						<ion-icon size="large" :icon="cameraOutline" />
-					</ion-button>
-					<ion-button
-						@click="removeImagePreview"
-						color="danger"
-						v-if="newActivity.imageUrl"
-						><ion-icon size="large" :icon="trashOutline"
-					/></ion-button>
-				</ion-item>
-				<ion-item lines="none" v-if="newActivity.imageUrl">
-					<img
-						:src="newActivity.imageUrl"
-						alt="Activity image"
-						style="max-width: 50%" />
-				</ion-item>
+							<MapPicker
+								mode="editable"
+								:initialLatitude="currentLatitude"
+								:initialLongitude="currentLongitude"
+								@location-changed="handleLocationChange" />
 
-				<ion-button
-					@click="postNewActivity"
-					expand="block"
-					:disabled="!formIsValid"
-					>Submit Activity</ion-button
-				>
-			</ion-list>
+							<ion-item>
+								<ion-button @click="triggerCamera" color="black" size="large">
+									<ion-icon slot="start" :icon="cameraOutline" />
+								</ion-button>
+								<ion-button
+									@click="removeImagePreview"
+									color="danger"
+									v-if="newActivity.imageUrl">
+									<ion-icon slot="start" :icon="trashOutline" />Remove
+								</ion-button>
+							</ion-item>
+
+							<ion-item lines="none" v-if="newActivity.imageUrl">
+								<img
+									:src="newActivity.imageUrl"
+									alt="Activity image"
+									style="max-width: 100%; display: block; margin: auto" />
+							</ion-item>
+
+							<ion-button
+								@click="postNewActivity"
+								color="black"
+								:disabled="!formIsValid">
+								Submit Activity
+							</ion-button>
+						</ion-list>
+					</ion-card-content>
+				</ion-card>
+			</div>
 		</ion-content>
 	</ion-page>
 </template>

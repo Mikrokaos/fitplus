@@ -35,7 +35,7 @@ export default defineComponent({
 <template>
 	<ion-card class="activity-card">
 		<ion-card-header>
-			<ion-card-title>{{ activity.type }}</ion-card-title>
+			<ion-card-title>{{ activity.userName }}</ion-card-title>
 		</ion-card-header>
 		<ion-card-content>
 			<activity-image :imageURL="activity.imageUrl || defaultImageUrl" />

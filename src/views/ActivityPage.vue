@@ -39,6 +39,7 @@ const logout = async () => {
 	} catch (error) {
 		console.error(error);
 	}
+	router.push("/home");
 };
 
 onIonViewDidEnter(async () => {
@@ -65,10 +66,6 @@ const fetchActivities = async () => {
 		});
 	});
 	activities.value = results;
-};
-
-const goBack = () => {
-	router.back();
 };
 </script>
 
@@ -99,7 +96,13 @@ const goBack = () => {
 		</IonContent>
 		<IonFooter position="sticky" color="black">
 			<IonToolbar class="toolbar-center">
-				<IonButton color="black" :router-link="'/new-activity'">
+				<IonButton color="black" @click="logout" class="logout-button">
+					Logout
+				</IonButton>
+				<IonButton
+					color="black"
+					:router-link="'/new-activity'"
+					class="activity-button">
 					<IonIcon :icon="addCircleOutline" />
 				</IonButton>
 			</IonToolbar>
@@ -114,6 +117,15 @@ const goBack = () => {
 
 .toolbar-center {
 	display: flex;
-	justify-content: center;
+	justify-content: space-evenly;
+}
+
+.logout-button {
+	margin-right: auto;
+}
+
+.activity-button {
+	display: flex;
+	margin: auto;
 }
 </style>
