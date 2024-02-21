@@ -18,8 +18,9 @@ import {
 import { collection, getDocs, getFirestore } from "firebase/firestore";
 import { useRouter } from "vue-router";
 import { ref } from "vue";
+import { alertController } from "@ionic/vue";
 import { authService } from "@/services/firebase.AuthService";
-import { addCircleOutline, personCircle } from "ionicons/icons";
+import { addCircleOutline, logOutOutline, personCircle } from "ionicons/icons";
 import ActivityCard from "@/components/ActivityCard.vue";
 import defaultActivityImage from "@/assets/defaultActivity.jpg";
 
@@ -67,6 +68,38 @@ const fetchActivities = async () => {
 	});
 	activities.value = results;
 };
+
+const goToAuth = (authAction) => {
+	router.push({ name: "Authentication", query: { authAction: authAction } });
+};
+
+const goToProfile = async () => {
+	if (!currentUserData.value) {
+		// No user is logged in, show an alert with options to login or register
+		const alert = await alertController.create({
+			header: "Authentication Required",
+			message: "You need to log in to access the profile page.",
+			buttons: [
+				{
+					text: "Login",
+					handler: () => {
+						goToAuth("login");
+					},
+				},
+				{
+					text: "Register",
+					handler: () => {
+						goToAuth("register");
+					},
+				},
+			],
+		});
+
+		await alert.present();
+	} else {
+		router.push("/profile");
+	}
+};
 </script>
 
 <template>
@@ -75,7 +108,7 @@ const fetchActivities = async () => {
 			<IonToolbar>
 				<IonTitle>FitPlus</IonTitle>
 				<IonButtons slot="end">
-					<IonButton @click="router.push('/profile')">
+					<IonButton @click="goToProfile">
 						<IonIcon :icon="personCircle" />
 					</IonButton>
 				</IonButtons>
@@ -96,10 +129,15 @@ const fetchActivities = async () => {
 		</IonContent>
 		<IonFooter position="sticky" color="black">
 			<IonToolbar class="toolbar-center">
-				<IonButton color="black" @click="logout" class="logout-button">
-					Logout
-				</IonButton>
 				<IonButton
+					slot="start"
+					color="black"
+					@click="logout"
+					class="logout-button">
+					<IonIcon :icon="logOutOutline"></IonIcon
+				></IonButton>
+				<IonButton
+					slot="end"
 					color="black"
 					:router-link="'/new-activity'"
 					class="activity-button">
@@ -117,15 +155,17 @@ const fetchActivities = async () => {
 
 .toolbar-center {
 	display: flex;
-	justify-content: space-evenly;
+	justify-content: center;
 }
 
 .logout-button {
 	margin-right: auto;
+	margin-left: 40px;
 }
 
 .activity-button {
 	display: flex;
-	margin: auto;
+	margin-left: auto;
+	margin-right: 145px;
 }
 </style>

@@ -13,7 +13,6 @@ import {
 	IonLabel,
 	IonList,
 	IonCardHeader,
-	IonCardSubtitle,
 	IonButtons,
 	IonCard,
 	IonCardContent,
@@ -25,15 +24,8 @@ import {
 	IonToolbar,
 	onIonViewDidEnter,
 } from "@ionic/vue";
-import { ref } from "vue";
-import {
-	chatboxOutline,
-	arrowBack,
-	trash,
-	heart,
-	heartOutline,
-	constructOutline,
-} from "ionicons/icons";
+import { ref, onMounted } from "vue";
+import { chatboxOutline, trash, accessibilityOutline } from "ionicons/icons";
 import { useRoute } from "vue-router";
 import {
 	collection,
@@ -49,14 +41,11 @@ import {
 	orderBy,
 	doc,
 } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
-/*import { authService } from "@/services/firebase.AuthService";
-import { Geolocation } from "@capacitor/geolocation";
-import { GoogleMap } from "@capacitor/google-maps"; */
-import { useRouter } from "vue-router";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import router from "@/router";
 import { IActivityResponse } from "@/models/ActivityModels";
 import MapPicker from "@/components/MapPicker.vue";
+import defaultProfilePicture from "../assets/defaultProfilePic.png";
 
 const route = useRoute();
 
@@ -72,57 +61,20 @@ const db = getFirestore();
 const activitiesCollection = collection(db, "activities");
 console.log(activitiesCollection);
 
+const userDetails = ref({
+	userName: "",
+	profilePicture: "",
+});
+
 const activitiesRef = doc(activitiesCollection, id as string);
 console.log(id);
-
-const back = () => {
-	router.push("/activity");
-};
 
 onIonViewDidEnter(async () => {
 	currentUserData.value = getAuth().currentUser;
 	await fetchActivities();
 	await fetchComments();
 	console.log("Activity", activity.value);
-	// await readGeoLocation();
 });
-
-/*const readGeoLocation = async () => {
-	try {
-		if (activity.value && !activity.value.location) {
-			const position = await Geolocation.getCurrentPosition();
-			const latitude = position.coords.latitude;
-			const longitude = position.coords.longitude;
-			const location = {
-				latitude,
-				longitude,
-			};
-			await updateDoc(activitiesRef, { location });
-			activity.value.location = location;
-		}
-
-		const myMap = await GoogleMap.create({
-			id: "my-google-map",
-			element: myMapRef.value,
-			apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-			config: {
-				center: {
-					lat: activity.value.location?.latitude,
-					lng: activity.value.location?.longitude,
-				},
-				zoom: 16,
-			},
-		});
-		const markerId = await myMap.addMarker({
-			coordinate: {
-				lat: activity.value.location?.latitude,
-				lng: activity.value.location?.longitude,
-			},
-		});
-	} catch (error) {
-		console.error("Error getting location: ", error);
-	}
-}; */
 
 const fetchActivities = async () => {
 	try {
@@ -135,13 +87,44 @@ const fetchActivities = async () => {
 		}
 	} catch (error) {
 		console.error("Error fetching the activity", error);
-		isLoadingActivity.value = false; // Ensure loading state is updated even on error
+		isLoadingActivity.value = false;
 	}
 };
 
 const fetchComments = async () => {
 	if (!id) return;
 	comments.value = await fetchCommentsForActivity(id as string);
+};
+
+onMounted(() => {
+	const auth = getAuth();
+	onAuthStateChanged(auth, (user) => {
+		if (user) {
+			fetchUserProfile(user.uid);
+		} else {
+			console.log("No user is signed in.");
+		}
+	});
+});
+
+const fetchUserProfile = async (uid) => {
+	try {
+		const userRef = doc(db, "userProfile", uid);
+		const userSnap = await getDoc(userRef);
+		if (userSnap.exists()) {
+			const userData = userSnap.data();
+			return {
+				userName: userData.userName || "Guest",
+				userAvatar: userData.profilePicture || defaultProfilePicture,
+			};
+		} else {
+			console.log("No user profile found for UID:", uid);
+			return { userName: "Guest", userAvatar: defaultProfilePicture };
+		}
+	} catch (error) {
+		console.error("Error fetching user profile:", error);
+		return { userName: "Guest", userAvatar: defaultProfilePicture };
+	}
 };
 
 const addComment = async () => {
@@ -152,22 +135,25 @@ const addComment = async () => {
 		"comments"
 	);
 
+	let userProfile = { userName: "Guest", userAvatar: defaultProfilePicture };
+	if (currentUserData.value && currentUserData.value.uid) {
+		userProfile = await fetchUserProfile(currentUserData.value.uid);
+	}
+
+	const newComment = {
+		userId: currentUserData.value ? currentUserData.value.uid : "guest",
+		userName: userProfile.userName, // From fetched or default userProfile
+		userAvatar: userProfile.userAvatar, // From fetched or default userProfile
+		text: newCommentText.value,
+		timestamp: new Date(),
+	};
+
 	try {
-		const newComment = {
-			userId: currentUserData.value ? currentUserData.value.uid : "guest",
-			text: newCommentText.value,
-			timestamp: new Date(),
-		};
-
 		await addDoc(commentsCollectionRef, newComment);
-
-		console.log(addComment, "Comment added");
-
-		isModalOpen.value = false; // Close the modal
-		newCommentText.value = ""; // Clear the textarea
-		await addDoc(commentsCollectionRef, newComment);
-		await fetchComments();
-		console.log("Comments fetched successfully");
+		console.log("Comment added");
+		isModalOpen.value = false;
+		newCommentText.value = "";
+		await fetchComments(); // Refresh comments list
 	} catch (error) {
 		console.error("Error adding comment", error);
 	}
@@ -181,7 +167,6 @@ const updateComments = async (updatedComment: string) => {
 		console.error("Error updating comments", error);
 	}
 };
-
 const deleteComment = async (commentId) => {
 	if (!id || !commentId) {
 		console.error("Activity ID or Comment ID is missing.");
@@ -192,11 +177,14 @@ const deleteComment = async (commentId) => {
 		const commentRef = doc(db, "activities", id, "comments", commentId);
 		await deleteDoc(commentRef);
 		console.log(`Comment with ID ${commentId} deleted.`);
+
 		// Optionally, refresh comments list here
+		await fetchComments(); // This assumes you have a method to fetch comments
 	} catch (error) {
 		console.error("Error deleting comment", error);
 	}
 };
+
 const fetchCommentsForActivity = async (activityId: string) => {
 	const commentsCollectionRef = collection(
 		db,
@@ -219,80 +207,65 @@ const fetchCommentsForActivity = async (activityId: string) => {
 				<ion-buttons slot="start">
 					<ion-back-button defaultHref="/activity"></ion-back-button>
 				</ion-buttons>
-				<ion-title>{{ activity?.type }}</ion-title>
+				<ion-title>{{ activity?.userName }}</ion-title>
 			</ion-toolbar>
 		</ion-header>
 
 		<ion-content :fullscreen="true" v-if="activity && !isLoadingActivity">
-			<ion-grid>
-				<ion-row>
-					<ion-col size-md="8" offset-md="2">
+			<div style="max-width: 600px; margin: auto">
+				<ion-card>
+					<ion-card-header> </ion-card-header>
+					<ion-card-content>
 						<div v-if="activity.imageUrl" class="image-container">
 							<img :src="activity.imageUrl" alt="Activity Image" />
 						</div>
-					</ion-col>
-				</ion-row>
-				<ion-row>
-					<ion-col size-md="8" offset-md="2">
-						<ion-card>
-							<MapPicker
-								v-if="activity.location"
-								mode="readonly"
-								:initialLatitude="activity.location.latitude"
-								:initialLongitude="activity.location.longitude" />
-						</ion-card>
-					</ion-col>
-				</ion-row>
-				<ion-row>
-					<ion-col size-md="8" offset-md="2">
-						<ion-card class="details-container">
-							<ion-card-header>
-								<ion-card-subtitle
-									>{{ activity.duration }} minutes</ion-card-subtitle
-								>
-								<ion-card-subtitle
-									>{{ activity.calorieConsumption }} calories</ion-card-subtitle
-								>
-							</ion-card-header>
-							<ion-card-content>
-								<ion-text>{{ activity.notes }}</ion-text>
-							</ion-card-content>
-						</ion-card>
-					</ion-col>
-				</ion-row>
-				<ion-row>
-					<ion-col size-md="8" offset-md="2">
-						<ion-card>
-							<ion-card-header>
-								<ion-card-title>Comments</ion-card-title>
-							</ion-card-header>
-							<ion-card-content>
-								<ion-list>
-									<ion-item v-for="comment in comments" :key="comment.id">
-										<ion-avatar slot="start">
-											<img src="" alt="User Avatar" />
-											<!-- Placeholder for user avatar -->
-										</ion-avatar>
-										<ion-label>
-											<h2>User Name Placeholder</h2>
-											<!-- Adjust to display user name if available -->
-											<p>{{ comment.text }}</p>
-										</ion-label>
-										<ion-buttons slot="end">
-											<ion-button
-												@click="deleteComment(comment.id)"
-												color="danger"
-												fill="clear">
-												<ion-icon :icon="trash" />
-											</ion-button>
-										</ion-buttons>
-									</ion-item>
-								</ion-list>
-							</ion-card-content>
-						</ion-card>
-					</ion-col>
-				</ion-row>
-			</ion-grid>
+
+						<MapPicker
+							v-if="activity.location"
+							mode="readonly"
+							:initialLatitude="activity.location.latitude"
+							:initialLongitude="activity.location.longitude" />
+
+						<div class="details-container">
+							<ion-chip>
+								<ion-icon :icon="accessibilityOutline"></ion-icon>
+								<ion-label>{{ activity.type }}</ion-label>
+							</ion-chip>
+							<h2>{{ activity.duration }} minutes</h2>
+							<h2>{{ activity.calorieConsumption }} calories</h2>
+							<p>{{ activity.notes }}</p>
+						</div>
+
+						<ion-list>
+							<ion-list-header>
+								<ion-label>Comments</ion-label>
+							</ion-list-header>
+							<ion-item
+								v-for="comment in comments"
+								:key="comment.id"
+								class="comment-item">
+								<ion-avatar slot="start">
+									<img
+										:src="comment.userAvatar || defaultAvatar"
+										alt="User Avatar" />
+								</ion-avatar>
+								<ion-label>
+									<h2>{{ comment.userName || "Guest" }}</h2>
+									<p>{{ comment.text }}</p>
+								</ion-label>
+								<ion-buttons slot="end">
+									<ion-button
+										@click="deleteComment(comment.id)"
+										color="danger"
+										fill="clear">
+										<ion-icon :icon="trash" />
+									</ion-button>
+								</ion-buttons>
+							</ion-item>
+						</ion-list>
+					</ion-card-content>
+				</ion-card>
+			</div>
 		</ion-content>
 
 		<ion-footer>
@@ -305,11 +278,7 @@ const fetchCommentsForActivity = async (activityId: string) => {
 			</ion-toolbar>
 		</ion-footer>
 
-		<ion-modal
-			:is-open="isModalOpen"
-			:initial-breakpoint="0.25"
-			:breakpoints="[0, 0.25, 0.5, 0.75]"
-			@did-dismiss="isModalOpen = false">
+		<ion-modal :is-open="isModalOpen" @did-dismiss="isModalOpen = false">
 			<ion-content class="ion-padding">
 				<ion-item lines="none">
 					<ion-label position="floating">New comment</ion-label>
@@ -328,14 +297,14 @@ const fetchCommentsForActivity = async (activityId: string) => {
 
 <style scoped>
 .image-container img {
-	width: 100%;
+	border-radius: 8px;
+	max-width: 100%;
 	height: auto;
 	display: block;
 	margin: 0 auto;
 }
 
 .details-container {
-	text-align: center;
 	padding: 16px;
 }
 

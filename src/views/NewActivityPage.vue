@@ -155,7 +155,7 @@ const postNewActivity = async () => {
 	}
 
 	try {
-		const userId = authService.currentUser()?.uid || "guest";
+		//const userId = authService.currentUser()?.uid || "guest";
 		const userName = userProfile.value ? userProfile.value.userName : "Guest";
 		const generateUUID = uuidv4();
 		let imageUrl = newActivity.value.imageUrl;

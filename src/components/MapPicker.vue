@@ -93,7 +93,9 @@ onMounted(fetchCurrentLocationAndInitialize);
 
 <style>
 .map-container {
+	margin-top: 20px;
 	height: 300px;
 	width: 100%;
+	border-radius: 8px;
 }
 </style>

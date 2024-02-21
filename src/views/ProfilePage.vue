@@ -40,6 +40,7 @@ import defaultProfilePicture from "../assets/defaultProfilePic.png";
 const router = useRouter();
 const db = getFirestore();
 const storage = getStorage();
+const activities = ref([]);
 
 const userDetails = ref({
 	userName: "",
