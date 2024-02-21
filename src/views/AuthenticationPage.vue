@@ -43,6 +43,9 @@ const db = getFirestore();
 const inLoginMode = ref(false);
 const inRegisterMode = ref(false);
 
+const defaultProfilePic =
+	"https://firebasestorage.googleapis.com/v0/b/fitplustds200.appspot.com/o/profilePictures%2FdefaultProfilePic.png?alt=media&token=d3a65220-6f07-469e-a4ca-1ce4466a21f1";
+
 const userDetails = ref({
 	id: "",
 	name: "",
@@ -74,7 +77,7 @@ const login = async () => {
 		);
 		const idToken = await user.getIdToken(true);
 		localStorage.setItem("idToken", idToken);
-		localStorage.removeItem("isGuest"); // Remove the guest flag if it exists
+		localStorage.removeItem("isGuest");
 		router.replace("/activity");
 	} catch (error) {
 		const toast = await toastController.create({
@@ -101,36 +104,51 @@ const register = async () => {
 	try {
 		const userNameUnique = await isUserNameUnique(userDetails.value.userName);
 		if (!userNameUnique) {
-			const toast = await toastController.create({
-				message: "Username already taken",
-				duration: 2000,
-			});
-			toast.present();
+			alert("Username already taken");
 			return;
 		}
-		// Capture the returned user object from the authService.register call
-		const user = await authService.register(
+
+		const userCredential = await authService.register(
 			userDetails.value.email,
 			userDetails.value.password
 		);
 
-		// Post the profile picture and get its URL
-		const profilePictureUrl = await postProfilePicture();
+		if (userCredential && userCredential.user) {
+			const authUser = userCredential.user;
 
-		const { password, ...userProfileData } = userDetails.value;
-		const userProfile = {
-			...userProfileData,
-			id: user.uid,
-			profilePicture: profilePictureUrl,
-		};
+			// Initialize profilePictureUrl with a default picture
+			let profilePictureUrl = defaultProfilePic;
 
-		// Create the user profile document in Firestore
-		await setDoc(doc(db, "userProfiles", user.uid), userProfile);
+			// Check if a profile picture has been chosen for upload
+			if (userDetails.value.profilePicture) {
+				try {
+					// Attempt to upload the profile picture and get the URL
+					profilePictureUrl = await postProfilePicture();
+				} catch (error) {
+					console.error("Failed to upload profile picture.", error);
+					// Optionally handle the error, e.g., by setting a default picture or notifying the user
+				}
+			}
 
-		// Optionally, log the user in immediately after registration
-		await login();
+			// Prepare user profile data
+			const userProfileData = {
+				name: userDetails.value.name,
+				email: userDetails.value.email,
+				userName: userDetails.value.userName,
+				profilePicture: profilePictureUrl,
+			};
+
+			// Save user profile in Firestore using the Auth User's UID
+			await setDoc(doc(db, "userProfile", authUser.uid), userProfileData);
+
+			console.log("User profile created with UID:", authUser.uid);
+			await login(); // Log the user in after successful registration
+		} else {
+			throw new Error("Registration failed: No user credential returned.");
+		}
 	} catch (error) {
-		console.error(error);
+		console.error("Registration error:", error);
+		alert("Registration failed: " + error.message);
 	}
 };
 
@@ -235,19 +253,16 @@ const navigateToLogin = () => {
 								<IonInput v-model="userDetails.userName" type="text"></IonInput>
 							</IonItem>
 							<div class="profile-pic-upload">
-								<IonButton fill="clear" @click="triggerCamera" color="white">
-									<IonIcon
-										:icon="cameraOutline"
-										size="large"
-										color="light"></IonIcon>
-								</IonButton>
+								<ion-button @click="triggerCamera" color="black">
+									<ion-icon size="large" :icon="cameraOutline" />
+								</ion-button>
 								<div v-if="userDetails.profilePicture" class="image-preview">
 									<img
 										:src="userDetails.profilePicture"
 										alt="Profile picture preview" />
-									<IonButton fill="clear" @click="removeImagePreview">
-										<IonIcon :icon="trashOutline" color="danger"></IonIcon>
-									</IonButton>
+									<ion-button @click="removeImagePreview" color="danger"
+										><ion-icon size="small" :icon="trashOutline"
+									/></ion-button>
 								</div>
 							</div>
 						</template>

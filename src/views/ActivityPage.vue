@@ -19,7 +19,7 @@ import { collection, getDocs, getFirestore } from "firebase/firestore";
 import { useRouter } from "vue-router";
 import { ref } from "vue";
 import { authService } from "@/services/firebase.AuthService";
-import { addCircleOutline, arrowBackOutline } from "ionicons/icons";
+import { addCircleOutline, personCircle } from "ionicons/icons";
 import ActivityCard from "@/components/ActivityCard.vue";
 import defaultActivityImage from "@/assets/defaultActivity.jpg";
 
@@ -78,7 +78,9 @@ const goBack = () => {
 			<IonToolbar>
 				<IonTitle>FitPlus</IonTitle>
 				<IonButtons slot="end">
-					<IonMenuButton></IonMenuButton>
+					<IonButton @click="router.push('/profile')">
+						<IonIcon :icon="personCircle" />
+					</IonButton>
 				</IonButtons>
 			</IonToolbar>
 		</IonHeader>

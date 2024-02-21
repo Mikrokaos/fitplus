@@ -25,7 +25,7 @@ export const authService = {
 	async logout() {
 		return await signOut(getAuth());
 	},
-	async currentUser() {
-		return await getAuth().currentUser;
+	currentUser() {
+		return getAuth().currentUser;
 	},
 };

@@ -217,81 +217,84 @@ const fetchCommentsForActivity = async (activityId: string) => {
 		<ion-header>
 			<ion-toolbar>
 				<ion-buttons slot="start">
-					<ion-back-button defaultHref="/activity">
-						<ion-icon :icon="arrowBack" />
-					</ion-back-button>
+					<ion-back-button defaultHref="/activity"></ion-back-button>
 				</ion-buttons>
-			</ion-toolbar>
-			<ion-toolbar>
-				<ion-title v-if="activity">{{ activity.type }}</ion-title>
+				<ion-title>{{ activity?.type }}</ion-title>
 			</ion-toolbar>
 		</ion-header>
 
 		<ion-content :fullscreen="true" v-if="activity && !isLoadingActivity">
-			<ion-card>
-				<ion-card-header>
-					<div v-if="activity && activity.imageUrl">
-						<img
-							:src="activity.imageUrl"
-							alt="Activity Image"
-							style="max-width: 100%; height: auto" />
-					</div>
-					<ion-card-subtitle>{{ activity.type }}</ion-card-subtitle>
-					<ion-card-subtitle>{{ activity.duration }} minutes</ion-card-subtitle>
-					<ion-card-subtitle
-						>{{ activity.calorieConsumption }} calories</ion-card-subtitle
-					>
-				</ion-card-header>
-				<MapPicker
-					v-if="activity && activity.location"
-					mode="readonly"
-					:initialLatitude="activity.location.latitude"
-					:initialLongitude="activity.location.longitude" />
-				<ion-card-content>
-					<ion-text>{{ activity.notes }}</ion-text>
-				</ion-card-content>
-			</ion-card>
-			<ion-card>
-				<ion-list>
-					<ion-list-header>
-						<ion-label>Comments</ion-label>
-					</ion-list-header>
-					<ion-item v-for="comment in comments" :key="comment.id">
-						<ion-avatar>
-							<!-- Placeholder for user avatar; adjust as needed -->
-							<img src="" alt="User Avatar" />
-						</ion-avatar>
-						<ion-label>
-							<h2>User Name Placeholder</h2>
-							<!-- Adjust to display user name if available -->
-							<p>{{ comment.text }}</p>
-						</ion-label>
-						<ion-buttons slot="end">
-							<ion-button
-								@click="deleteComment(comment.id)"
-								color="danger"
-								fill="clear">
-								<ion-icon :icon="trash" />
-							</ion-button>
-						</ion-buttons>
-					</ion-item>
-				</ion-list>
-			</ion-card>
-
-			<ion-modal
-				:is-open="isModalOpen"
-				:initial-breakpoint="0.25"
-				:breakpoints="[0, 0.25, 0.5, 0.75]"
-				@did-dismiss="isModalOpen = false">
-				<ion-content>
-					<ion-item lines="none">
-						<ion-label position="floating">New comment</ion-label>
-						<ion-textarea v-model="newCommentText"></ion-textarea>
-						<ion-button @click="addComment">Add comment</ion-button>
-					</ion-item>
-				</ion-content>
-			</ion-modal>
+			<ion-grid>
+				<ion-row>
+					<ion-col size-md="8" offset-md="2">
+						<div v-if="activity.imageUrl" class="image-container">
+							<img :src="activity.imageUrl" alt="Activity Image" />
+						</div>
+					</ion-col>
+				</ion-row>
+				<ion-row>
+					<ion-col size-md="8" offset-md="2">
+						<ion-card>
+							<MapPicker
+								v-if="activity.location"
+								mode="readonly"
+								:initialLatitude="activity.location.latitude"
+								:initialLongitude="activity.location.longitude" />
+						</ion-card>
+					</ion-col>
+				</ion-row>
+				<ion-row>
+					<ion-col size-md="8" offset-md="2">
+						<ion-card class="details-container">
+							<ion-card-header>
+								<ion-card-subtitle
+									>{{ activity.duration }} minutes</ion-card-subtitle
+								>
+								<ion-card-subtitle
+									>{{ activity.calorieConsumption }} calories</ion-card-subtitle
+								>
+							</ion-card-header>
+							<ion-card-content>
+								<ion-text>{{ activity.notes }}</ion-text>
+							</ion-card-content>
+						</ion-card>
+					</ion-col>
+				</ion-row>
+				<ion-row>
+					<ion-col size-md="8" offset-md="2">
+						<ion-card>
+							<ion-card-header>
+								<ion-card-title>Comments</ion-card-title>
+							</ion-card-header>
+							<ion-card-content>
+								<ion-list>
+									<ion-item v-for="comment in comments" :key="comment.id">
+										<ion-avatar slot="start">
+											<img src="" alt="User Avatar" />
+											<!-- Placeholder for user avatar -->
+										</ion-avatar>
+										<ion-label>
+											<h2>User Name Placeholder</h2>
+											<!-- Adjust to display user name if available -->
+											<p>{{ comment.text }}</p>
+										</ion-label>
+										<ion-buttons slot="end">
+											<ion-button
+												@click="deleteComment(comment.id)"
+												color="danger"
+												fill="clear">
+												<ion-icon :icon="trash" />
+											</ion-button>
+										</ion-buttons>
+									</ion-item>
+								</ion-list>
+							</ion-card-content>
+						</ion-card>
+					</ion-col>
+				</ion-row>
+			</ion-grid>
 		</ion-content>
+
 		<ion-footer>
 			<ion-toolbar>
 				<ion-buttons slot="end">
@@ -301,5 +304,42 @@ const fetchCommentsForActivity = async (activityId: string) => {
 				</ion-buttons>
 			</ion-toolbar>
 		</ion-footer>
+
+		<ion-modal
+			:is-open="isModalOpen"
+			:initial-breakpoint="0.25"
+			:breakpoints="[0, 0.25, 0.5, 0.75]"
+			@did-dismiss="isModalOpen = false">
+			<ion-content class="ion-padding">
+				<ion-item lines="none">
+					<ion-label position="floating">New comment</ion-label>
+					<ion-textarea v-model="newCommentText"></ion-textarea>
+				</ion-item>
+				<ion-button
+					@click="addComment"
+					expand="full"
+					class="submit-comment-button"
+					>Add Comment</ion-button
+				>
+			</ion-content>
+		</ion-modal>
 	</ion-page>
 </template>
+
+<style scoped>
+.image-container img {
+	width: 100%;
+	height: auto;
+	display: block;
+	margin: 0 auto;
+}
+
+.details-container {
+	text-align: center;
+	padding: 16px;
+}
+
+.submit-comment-button {
+	margin-top: 20px;
+}
+</style>

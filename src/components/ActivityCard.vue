@@ -40,10 +40,7 @@ export default defineComponent({
 		<ion-card-content>
 			<activity-image :imageURL="activity.imageUrl || defaultImageUrl" />
 			<div class="activity-details">
-				<p>Duration: {{ activity.duration }} minutes</p>
-				<p>Calories Burned: {{ activity.calorieConsumption }}</p>
-				<p>{{ activity.userName }}</p>
-				<p>Notes: {{ activity.notes || "No notes" }}</p>
+				<p>{{ activity.notes || "No notes" }}</p>
 			</div>
 		</ion-card-content>
 	</ion-card>
@@ -51,7 +48,7 @@ export default defineComponent({
 
 <style scoped>
 .activity-card {
-	max-width: 600px;
+	max-width: 400px;
 	margin: auto;
 	margin-bottom: 16px;
 	margin-top: 10px;

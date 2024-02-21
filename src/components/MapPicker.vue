@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, defineEmits, onMounted, watch } from "vue";
+import { ref, onMounted } from "vue";
 import { GoogleMap } from "@capacitor/google-maps";
 import { Geolocation } from "@capacitor/geolocation";
 

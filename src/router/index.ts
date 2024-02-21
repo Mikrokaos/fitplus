@@ -5,6 +5,7 @@ import NewActivityPage from "../views/NewActivityPage.vue";
 import AuthenticationPage from "../views/AuthenticationPage.vue";
 import ActivityPage from "../views/ActivityPage.vue";
 import DetailActivityPage from "../views/DetailActivityPage.vue";
+import ProfilePage from "../views/ProfilePage.vue";
 
 const routes: Array<RouteRecordRaw> = [
 	{
@@ -36,6 +37,11 @@ const routes: Array<RouteRecordRaw> = [
 		path: "/activity/:id",
 		name: "ActivityDetails",
 		component: DetailActivityPage,
+	},
+	{
+		path: "/profile",
+		name: "Profile",
+		component: ProfilePage,
 	},
 ];
 

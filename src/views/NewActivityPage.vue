@@ -275,17 +275,15 @@ const formIsValid = computed(() => {
 					@location-changed="handleLocationChange" />
 
 				<ion-item>
-					<ion-button
-						@click="triggerCamera"
-						:icon="cameraOutline"
-						fill="outline"></ion-button>
+					<ion-button @click="triggerCamera" color="black">
+						<ion-icon size="large" :icon="cameraOutline" />
+					</ion-button>
 					<ion-button
 						@click="removeImagePreview"
 						color="danger"
-						fill="outline"
 						v-if="newActivity.imageUrl"
-						>Remove Image</ion-button
-					>
+						><ion-icon size="large" :icon="trashOutline"
+					/></ion-button>
 				</ion-item>
 				<ion-item lines="none" v-if="newActivity.imageUrl">
 					<img

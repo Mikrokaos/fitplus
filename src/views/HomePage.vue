@@ -12,7 +12,6 @@ import {
 	IonTitle,
 } from "@ionic/vue";
 import { useRouter } from "vue-router";
-import AuthenticationPage from "./AuthenticationPage.vue";
 
 const router = useRouter();
 
