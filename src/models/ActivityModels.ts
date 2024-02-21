@@ -8,7 +8,10 @@ export interface IActivity {
 	notes?: string;
 	imageUrl?: string;
 	comments?: string[];
-	location?: string;
+	location: {
+		latitude: number;
+		longitude: number;
+	};
 }
 
 export interface IActivityResponse {

@@ -50,12 +50,13 @@ import {
 	doc,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { authService } from "@/services/firebase.AuthService";
+/*import { authService } from "@/services/firebase.AuthService";
 import { Geolocation } from "@capacitor/geolocation";
-import { GoogleMap } from "@capacitor/google-maps";
+import { GoogleMap } from "@capacitor/google-maps"; */
 import { useRouter } from "vue-router";
 import router from "@/router";
 import { IActivityResponse } from "@/models/ActivityModels";
+import MapPicker from "@/components/MapPicker.vue";
 
 const route = useRoute();
 
@@ -83,10 +84,10 @@ onIonViewDidEnter(async () => {
 	await fetchActivities();
 	await fetchComments();
 	console.log("Activity", activity.value);
-	await readGeoLocation();
+	// await readGeoLocation();
 });
 
-const readGeoLocation = async () => {
+/*const readGeoLocation = async () => {
 	try {
 		if (activity.value && !activity.value.location) {
 			const position = await Geolocation.getCurrentPosition();
@@ -101,16 +102,15 @@ const readGeoLocation = async () => {
 		}
 
 		const myMap = await GoogleMap.create({
-			id: "my-google-map", // Unique identifier for this map instance
-			element: myMapRef.value, // reference to the capacitor-google-map element
-			apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "", // Your Google Maps API Key
+			id: "my-google-map",
+			element: myMapRef.value,
+			apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
 			config: {
 				center: {
-					// The initial position to be rendered by the map
 					lat: activity.value.location?.latitude,
 					lng: activity.value.location?.longitude,
 				},
-				zoom: 16, // The initial zoom level to be rendered by the map
+				zoom: 16,
 			},
 		});
 		const markerId = await myMap.addMarker({
@@ -122,7 +122,7 @@ const readGeoLocation = async () => {
 	} catch (error) {
 		console.error("Error getting location: ", error);
 	}
-};
+}; */
 
 const fetchActivities = async () => {
 	try {
@@ -221,10 +221,9 @@ const fetchCommentsForActivity = async (activityId: string) => {
 						<ion-icon :icon="arrowBack" />
 					</ion-back-button>
 				</ion-buttons>
-				<ion-title>Activity Details</ion-title>
 			</ion-toolbar>
 			<ion-toolbar>
-				<ion-title v-if="activity">{{ activity.id }}</ion-title>
+				<ion-title v-if="activity">{{ activity.type }}</ion-title>
 			</ion-toolbar>
 		</ion-header>
 
@@ -243,12 +242,11 @@ const fetchCommentsForActivity = async (activityId: string) => {
 						>{{ activity.calorieConsumption }} calories</ion-card-subtitle
 					>
 				</ion-card-header>
-				<div>
-					<capacitor-google-maps
-						ref="myMapRef"
-						style="width: 100%; height: 300px; display: inline-block">
-					</capacitor-google-maps>
-				</div>
+				<MapPicker
+					v-if="activity && activity.location"
+					mode="readonly"
+					:initialLatitude="activity.location.latitude"
+					:initialLongitude="activity.location.longitude" />
 				<ion-card-content>
 					<ion-text>{{ activity.notes }}</ion-text>
 				</ion-card-content>

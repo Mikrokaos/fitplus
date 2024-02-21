@@ -1,43 +1,99 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, defineEmits, onMounted, watch } from "vue";
 import { GoogleMap } from "@capacitor/google-maps";
+import { Geolocation } from "@capacitor/geolocation";
 
-const mapContainerRef = ref(null);
+const props = defineProps({
+	mode: String,
+	initialLatitude: Number,
+	initialLongitude: Number,
+});
 
-onMounted(async () => {
-	if (mapContainerRef.value) {
-		const map = await GoogleMap.create({
-			id: "my-google-map",
-			element: mapContainerRef.value,
-			apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
-			config: {
-				center: { lat: -34.397, lng: 150.644 },
-				zoom: 8,
-			},
+const currentLatitude = ref(props.initialLatitude);
+const currentLongitude = ref(props.initialLongitude);
+const myMapRef = ref(null);
+const emit = defineEmits(["location-changed"]);
+
+let myMap;
+let markerId;
+
+const initializeOrUpdateMap = async (latitude, longitude) => {
+	if (!myMap) {
+		// Initialize the map
+		try {
+			myMap = await GoogleMap.create({
+				id: "my-google-map",
+				element: myMapRef.value,
+				apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+				config: {
+					center: { lat: latitude, lng: longitude },
+					zoom: 16,
+				},
+			});
+		} catch (error) {
+			console.error("Error creating map:", error);
+			return;
+		}
+	} else {
+		// Update map center
+		myMap.setCamera({
+			coordinate: { lat: latitude, lng: longitude },
+			zoom: 16,
 		});
+	}
 
-		google.maps.event.addListener(marker, "dragend", () => {
-			const position = marker.getPosition();
-			console.log(position.lat(), position.lng());
-			// Emit the event up to the parent component
-			context.emit("location-changed", {
-				lat: position.lat(),
-				lng: position.lng(),
+	// Update or create marker
+	if (markerId !== undefined) {
+		await myMap.removeMarker(markerId);
+	}
+	markerId = await myMap.addMarker({
+		coordinate: { lat: latitude, lng: longitude },
+	});
+
+	// Setup click listener if mode is editable
+	if (props.mode === "editable") {
+		myMap.setOnMapClickListener(async (event) => {
+			initializeOrUpdateMap(event.latitude, event.longitude);
+			emit("location-changed", {
+				latitude: event.latitude,
+				longitude: event.longitude,
 			});
 		});
 	}
-});
+};
+
+// Fetch current location or use provided props
+const fetchCurrentLocationAndInitialize = async () => {
+	let latitude = props.initialLatitude;
+	let longitude = props.initialLongitude;
+
+	// Fetch current location if no initial coordinates are provided
+	if (latitude === undefined || longitude === undefined) {
+		try {
+			const position = await Geolocation.getCurrentPosition();
+			latitude = position.coords.latitude;
+			longitude = position.coords.longitude;
+		} catch (error) {
+			console.error("Error fetching current location:", error);
+			return;
+		}
+	}
+
+	currentLatitude.value = latitude;
+	currentLongitude.value = longitude;
+	initializeOrUpdateMap(latitude, longitude);
+};
+
+onMounted(fetchCurrentLocationAndInitialize);
 </script>
 
 <template>
-	<capacitor-google-maps>
-		<div ref="mapContainer" class="map-container"></div>
-	</capacitor-google-maps>
+	<div ref="myMapRef" class="map-container"></div>
 </template>
 
 <style>
 .map-container {
-	width: 100%;
 	height: 300px;
+	width: 100%;
 }
 </style>

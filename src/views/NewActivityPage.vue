@@ -69,6 +69,10 @@ const newActivity = ref({
 	notes: "",
 	imageUrl: "",
 	id: "",
+	location: {
+		latitude: null,
+		longitude: null,
+	},
 });
 
 const activityTypes: Ref<IActivityType[]> = ref([]);
@@ -85,8 +89,9 @@ const handleTypeChange = (event: SelectCustomEvent<string>) => {
 };
 
 const handleLocationChange = (location) => {
-	newActivity.value.location = location;
-	console.log("Location updated:", location);
+	newActivity.value.location.latitude = location.latitude;
+	newActivity.value.location.longitude = location.longitude;
+	console.log("Location updated:", newActivity.value.location);
 };
 
 // Fetch the user's name from the user profile
@@ -161,6 +166,7 @@ const postNewActivity = async () => {
 			userName: isGuest.value ? "Guest" : "",
 			notes: newActivity.value.notes,
 			imageUrl: imageUrl,
+			location: newActivity.value.location,
 		};
 
 		if (!newActivity.value.imageUrl) {
@@ -262,7 +268,11 @@ const formIsValid = computed(() => {
 					<ion-textarea v-model="newActivity.notes"></ion-textarea>
 				</ion-item>
 
-				<MapPicker @location-changed="handleLocationChange" />
+				<MapPicker
+					mode="editable"
+					:initialLatitude="currentLatitude"
+					:initialLongitude="currentLongitude"
+					@location-changed="handleLocationChange" />
 
 				<ion-item>
 					<ion-button
