@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import {
 	IonBackButton,
+	IonCard,
+	IonCardContent,
+	IonCardHeader,
+	IonCardTitle,
 	IonButton,
 	IonButtons,
-	IonChip,
 	IonContent,
 	IonHeader,
 	IonIcon,
@@ -13,6 +16,8 @@ import {
 	IonList,
 	IonPage,
 	IonTextarea,
+	IonSelect,
+	IonSelectOption,
 	IonTitle,
 	IonToolbar,
 	toastController,
@@ -36,15 +41,9 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
-import {
-	add,
-	camera,
-	cameraOutline,
-	logOut,
-	trashOutline,
-} from "ionicons/icons";
+import { cameraOutline, trashOutline } from "ionicons/icons";
 import { IActivityType } from "@/types/ActivityType";
-import { getAuth, updateCurrentUser } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 import { authService } from "@/services/firebase.AuthService";
 import { IUserProfile } from "../types/UserProfile";
 import MapPicker from "@/components/MapPicker.vue";

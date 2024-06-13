@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import {
 	IonModal,
-	IonSpinner,
 	IonTextarea,
 	IonBackButton,
 	IonButton,
 	IonAvatar,
-	IonText,
+	IonFooter,
 	IonIcon,
 	IonItem,
 	IonListHeader,
@@ -32,17 +31,14 @@ import {
 	getDocs,
 	getFirestore,
 	query,
-	where,
 	getDoc,
 	setDoc,
-	updateDoc,
 	deleteDoc,
 	addDoc,
 	orderBy,
 	doc,
 } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import router from "@/router";
 import { IActivityResponse } from "@/models/ActivityModels";
 import MapPicker from "@/components/MapPicker.vue";
 import defaultProfilePicture from "../assets/defaultProfilePic.png";
@@ -177,7 +173,6 @@ const deleteComment = async (commentId) => {
 		console.error("Activity ID or Comment ID is missing.");
 		return;
 	}
-	// delete the comment from the comments collection
 	try {
 		const commentRef = doc(db, "activities", id, "comments", commentId);
 		await deleteDoc(commentRef);

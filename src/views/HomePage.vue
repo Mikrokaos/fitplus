@@ -7,9 +7,6 @@ import {
 	IonCardTitle,
 	IonContent,
 	IonPage,
-	IonHeader,
-	IonToolbar,
-	IonTitle,
 } from "@ionic/vue";
 import { useRouter } from "vue-router";
 

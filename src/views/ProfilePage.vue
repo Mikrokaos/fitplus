@@ -3,6 +3,7 @@ import { onMounted, ref } from "vue";
 import {
 	IonAvatar,
 	IonButton,
+	IonButtons,
 	IonContent,
 	IonHeader,
 	IonInput,
@@ -17,16 +18,7 @@ import {
 import { arrowBackOutline } from "ionicons/icons";
 import { useRouter } from "vue-router";
 import { Camera, CameraResultType } from "@capacitor/camera";
-import {
-	doc,
-	getDoc,
-	getDocs,
-	updateDoc,
-	collection,
-	query,
-	where,
-	getFirestore,
-} from "firebase/firestore";
+import { doc, getDoc, updateDoc, getFirestore } from "firebase/firestore";
 import {
 	getDownloadURL,
 	uploadBytes,

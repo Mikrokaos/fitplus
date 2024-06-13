@@ -10,22 +10,12 @@ import {
 	IonListHeader,
 	IonPage,
 	IonTitle,
-	IonText,
-	IonToggle,
 	toastController,
 } from "@ionic/vue";
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { Camera, CameraResultType } from "@capacitor/camera";
-import {
-	getFirestore,
-	doc,
-	setDoc,
-	getDocs,
-	collection,
-	query,
-	where,
-} from "firebase/firestore";
+import { getFirestore, doc, setDoc } from "firebase/firestore";
 import { trashOutline, cameraOutline } from "ionicons/icons";
 import {
 	getStorage,
@@ -100,7 +90,7 @@ const register = async () => {
 			userDetails.value.email,
 			userDetails.value.password
 		);
-		// if the user is registered successfully, create the user profile
+		//if the user is registered successfully, create the user profile
 		if (userCredential && userCredential.uid) {
 			const uid = userCredential.uid;
 			let profilePictureUrl = userDetails.value.profilePicture
@@ -239,7 +229,7 @@ const removeImagePreview = () => {
 }
 
 .title {
-	font-size: 1.5rem; /* Adjust title font size */
+	font-size: 1.5rem;
 }
 
 .input-item {
@@ -257,7 +247,7 @@ const removeImagePreview = () => {
 }
 
 .image-preview img {
-	width: 100px; /* Adjust image preview size */
+	width: 100px;
 	height: 100px;
 	object-fit: cover;
 	border-radius: 50%;
